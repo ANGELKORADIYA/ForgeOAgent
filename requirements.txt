@@ -1,0 +1,7 @@
+google-generativeai
+requests
+dotenv
+google
+google-genai
+google-api-core
+google-generativeai

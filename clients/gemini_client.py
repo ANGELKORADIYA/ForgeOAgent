@@ -18,8 +18,7 @@ from core.config_prompts import (
     MAIN_AGENT_SYSTEM_INSTRUCTION,
     MAIN_AGENT_OUTPUT_REQUIRED,
     MAIN_AGENT_OUTPUT_PROPERTIES,
-    DEFAULT_SYSTEM_INSTRUCTION_SEARCH,
-    PROMPT_IMPROVER_SYSTEM_INSTRUCTION,)
+    DEFAULT_SYSTEM_INSTRUCTION_SEARCH,)
 
 from google.genai import types
 from google.api_core.exceptions import Unauthenticated, ResourceExhausted, GoogleAPICallError
@@ -439,12 +438,12 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
         print(f"❌ Task failed!")
         return error_result
 
-
-def main_prompt_improver(input_text:str,api_keys:List[str]):
-    main_agent = GeminiAPIClient(
-            api_keys=api_keys,
-        )
-    main_agent_response = main_agent.call_api_search("improve this prompt :```text "+input_text+"```",system_instruction=PROMPT_IMPROVER_SYSTEM_INSTRUCTION)
-    print(main_agent_response)
-    # main_agent_first_response = next(iter(main_agent_response))
+# Example of use
+# def main_prompt_improver(input_text:str,api_keys:List[str]):
+#     main_agent = GeminiAPIClient(
+#             api_keys=api_keys,
+#         )
+#     main_agent_response = main_agent.call_api_search("improve this prompt :```text "+input_text+"```",system_instruction=PROMPT_IMPROVER_SYSTEM_INSTRUCTION)
+#     print(main_agent_response)
+#     # main_agent_first_response = next(iter(main_agent_response))
     
