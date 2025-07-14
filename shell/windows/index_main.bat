@@ -1,0 +1,1 @@
+powershell.exe -ExecutionPolicy Bypass -File index_main.ps1

@@ -5,6 +5,7 @@ from datetime import datetime
 import traceback
 from typing import Dict, List, Any, Optional
 from google import genai
+import sys
 
 from core.pip_installer import pip_installer
 from core.api_key_manager import GlobalAPIKeyManager
@@ -23,6 +24,8 @@ from core.config_prompts import (
 from google.genai import types
 from google.api_core.exceptions import Unauthenticated, ResourceExhausted, GoogleAPICallError
 
+# Ensure UTF-8 encoding for stdout
+sys.stdout.reconfigure(encoding='utf-8')
 
 
 class GeminiAPIClient:
@@ -350,7 +353,7 @@ class GeminiAPIClient:
 
 
 
-def main(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None) -> Dict[str, Any]:
+def main(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None , shell_enabled:bool = False) -> Dict[str, Any]:
     """Create the main agent responsible for generating Python code with interactive agent selection."""
     print("🚀 AI Agent System")
     print("=" * 60)
@@ -413,18 +416,19 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
         }
         
         # Ask to save agent if successful
-        save_choice = input("\n💾 Save this agent for future use? (y/n): ").strip().lower()
-        if save_choice in ['y', 'yes']:
-            agent_name = input("Enter agent name: ").strip()
-            if agent_name:
-                agent_manager = AgentManager()
-                agent_manager.save_agent(
-                    agent_name=agent_name,
-                    conversation_id=result["conversation_id"],
-                    task_ids=result["task_ids"]
-                )
-            else:
-                print("❌ No agent name provided. Agent not saved.")
+        if not shell_enabled:
+            save_choice = input("\n💾 Save this agent for future use? (y/n): ").strip().lower()
+            if save_choice in ['y', 'yes']:
+                agent_name = input("Enter agent name: ").strip()
+                if agent_name:
+                    agent_manager = AgentManager()
+                    agent_manager.save_agent(
+                        agent_name=agent_name,
+                        conversation_id=result["conversation_id"],
+                        task_ids=result["task_ids"]
+                    )
+                else:
+                    print("❌ No agent name provided. Agent not saved.")
         
         return result
         

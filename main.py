@@ -42,10 +42,12 @@ if __name__ == "__main__":
         api_keys = [key.strip() for key in gemini_keys.split(",") if key.strip()]
 
     args = sys.argv[1:]
-
+    shell_enabled = "--main" in args
     if "-l" in args:
         print_available_system_instructions()
-
+    elif shell_enabled:
+        prompt_text = args[0] if args[0] != "--main" else args[1]
+        main(api_keys,prompt_text,shell_enabled=shell_enabled)
     elif "-p" in args:
         try:
             p_index = args.index("-p")
