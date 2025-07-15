@@ -5,3 +5,4 @@ google
 google-genai
 google-api-core
 google-generativeai
+# PyInstaller

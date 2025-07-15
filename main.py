@@ -3,6 +3,8 @@ import sys
 from dotenv import load_dotenv
 from typing import List
 from clients.gemini_client import main, GeminiAPIClient
+from core.agent_manager import AgentManager
+
 load_dotenv()
 
 # only import prompts to activate and have _system_instruction
@@ -34,6 +36,17 @@ def print_available_system_instructions():
         if var_name.endswith("_SYSTEM_INSTRUCTION"):
             print(f"{var_name}")
 
+def print_available_agents():
+    """Print all saved agents from AgentManager."""
+    agent_manager = AgentManager()
+    agents = agent_manager.list_agents()  # Assumes this returns a list of agent dicts
+    if not agents:
+        print("No agents found.")
+        return
+    for idx, agent in enumerate(agents):
+        print(f"{agent.get('agent_name', 'Unnamed')}")
+    print("None")
+
 
 if __name__ == "__main__":
     api_keys = []
@@ -43,11 +56,22 @@ if __name__ == "__main__":
 
     args = sys.argv[1:]
     shell_enabled = "--main" in args
-    if "-l" in args:
+    
+    if "-l" in args and shell_enabled:
+        print_available_agents()
+    elif "-l" in args and not shell_enabled:
         print_available_system_instructions()
     elif shell_enabled:
-        prompt_text = args[0] if args[0] != "--main" else args[1]
-        main(api_keys,prompt_text,shell_enabled=shell_enabled)
+        try:
+            p_index = args.index("-p")
+            main_index = args.index("--main") if "--main" in args else -1
+            prompt_type = args[p_index + 1]
+            # prompt_text = [args[i] for i in range(len(args)) if i != p_index and i != p_index + 1 and i != main_index][0]
+            prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1, main_index})
+            prompt_text_path = AgentManager().get_agent_path(prompt_type) if prompt_type else None
+            main(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_text},reference_agent_path=prompt_text_path)
+        except (IndexError, ValueError):
+            print("[ERROR] Usage: -p <type> <prompt> --main")
     elif "-p" in args:
         try:
             p_index = args.index("-p")

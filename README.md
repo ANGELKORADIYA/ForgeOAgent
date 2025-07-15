@@ -40,6 +40,8 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
    ```
    - List agents: `python main.py -l`
    - Run with prompt: `python main.py -p <prompt_name> "your prompt here"`
+   - Run with any-do: `python main.py "your prompt here" --main`
+
 5. **Assign a shortcut for quick access**
    - **Linux:**
      1. Go to Settings > Keyboard Shortcuts > Add Shortcut.
@@ -52,6 +54,7 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 - Create or modify agents in `core/prompts/`
 - Integrate new clients in `clients/`
 - Review logs in `logs/` for agent activity and improvements
+- *_main.* is used for anything you want to do.
 
 ### ⚡ Creating Custom Agents & Shortcuts
 You can assign `.sh` (shell) or `.vbs` (VBScript) files to shortcuts for instant agent execution.

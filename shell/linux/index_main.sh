@@ -8,6 +8,20 @@ SELECTED_TEXT=$(xclip -selection primary -o 2>/dev/null || echo "")
 PYTHON_BIN="../../main.py"
 SCRIPT_PATH="python"
 
+
+# Get prompt type list using -l and clean the output
+PROMPT_TYPES_RAW=$("$PYTHON_BIN" "$SCRIPT_PATH" -l --main)
+PROMPT_TYPES=$(echo "$PROMPT_TYPES_RAW")
+
+# Use zenity for graphical prompt selection
+SELECTED_TYPE=$(echo "$PROMPT_TYPES" | sed 's/^[-[:space:]]*//' | zenity --list --column="Prompt Types" --title="Select Prompt Type" --height=300)
+
+# User cancelled or closed prompt
+if [ -z "$SELECTED_TYPE" ]; then
+    notify-send "Cancelled" "No prompt type selected"
+    exit 1
+fi
+
 # Determine context content based on selected text
 if [ -n "$SELECTED_TEXT" ]; then
     # Check if selected text is a file path
@@ -78,7 +92,7 @@ else
 fi
 
 # Call Python script with final text
-RESULT=$("$PYTHON_BIN" "$SCRIPT_PATH" "$FINAL_TEXT" --main)
+RESULT=$("$PYTHON_BIN" "$SCRIPT_PATH" "$FINAL_TEXT" -p "$SELECTED_TYPE" --main)
 
 # Display result in a dialog and notify
 if [ $? -eq 0 ]; then

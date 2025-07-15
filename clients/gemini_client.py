@@ -33,7 +33,7 @@ class GeminiAPIClient:
     
     def __init__(self, 
                  api_keys: Optional[List[str]] = None,
-                 system_instruction: str = DEFAULT_SYSTEM_INSTRUCTION,
+                 system_instruction: str = None,
                  output_required: List[str] = DEFAULT_OUTPUT_REQUIRED,
                  output_properties: Dict[str, types.Schema] = DEFAULT_OUTPUT_PROPERTIES,
                  model: str = DEFAULT_MODEL,
@@ -51,6 +51,8 @@ class GeminiAPIClient:
         
         if system_instruction:
             self.system_instruction = DEFAULT_SYSTEM_INSTRUCTION + "\n\n" + system_instruction
+        else:
+            self.system_instruction = None
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.conversation_id = conversation_id or f"agent_{timestamp}_{uuid.uuid4().hex[:8]}"
 
@@ -144,8 +146,13 @@ class GeminiAPIClient:
                         continue
         return contents
 
-    def call_api(self, prompt: str, max_retries: int = 3, previous_conversation_log: bool = False) -> Dict[str, Any]:
+    def call_api(self, prompt: str, max_retries: int = 3, previous_conversation_log: bool = False,system_instruction:str = None) -> Dict[str, Any]:
         """Make API call with error handling and retry logic."""
+        if system_instruction is None and self.system_instruction is not None:
+            system_instruction = DEFAULT_SYSTEM_INSTRUCTION + "\n\n" + self.system_instruction
+        else:
+            system_instruction = DEFAULT_SYSTEM_INSTRUCTION
+        
         self.request_count += 1
         manager = GlobalAPIKeyManager()
 
@@ -192,7 +199,7 @@ class GeminiAPIClient:
                         properties=self.output_properties
                     ),
                     system_instruction=[
-                        types.Part.from_text(text=self.system_instruction)
+                        types.Part.from_text(text=system_instruction)
                     ]
                 )
                 
@@ -251,8 +258,14 @@ class GeminiAPIClient:
         
         raise Exception(f"Failed after {max_retries} retries")
     
-    def call_api_search(self, prompt: str, max_retries: int = 3,system_instruction:str = DEFAULT_SYSTEM_INSTRUCTION_SEARCH) -> Dict[str, Any]:
+    def call_api_search(self, prompt: str, max_retries: int = 3,system_instruction:str = None) -> Dict[str, Any]:
         """Make API call with error handling and retry logic."""
+        
+        if system_instruction is None and self.system_instruction is not None:
+            system_instruction = DEFAULT_SYSTEM_INSTRUCTION_SEARCH + "\n\n" + self.system_instruction # Not Needed
+        else:
+            system_instruction = DEFAULT_SYSTEM_INSTRUCTION_SEARCH
+
         self.request_count += 1
         manager = GlobalAPIKeyManager()
 
@@ -359,7 +372,7 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
     print("=" * 60)
     
     # If no user_request provided, handle interactive selection
-    if user_request is None:
+    if user_request is None and not shell_enabled and not selected_agent and not reference_agent_path:
         # Select agent or create new
         selected_agent, reference_agent_path = AgentManager().select_agent_or_create_new()
         
@@ -369,12 +382,12 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
             print("❌ No request provided. Exiting...")
             return {"status": "error", "error": "No request provided"}
     
-    print("🎯 Main Agent System Starting")
-    print("=" * 60)
-    print(f"📥 User Request: {user_request}")
-    if reference_agent_path:
-        print(f"🔗 Using reference agent: {selected_agent['agent_name'] if selected_agent else 'Unknown'}")
-    print("=" * 60)
+        print("🎯 Main Agent System Starting")
+        print("=" * 60)
+        print(f"📥 User Request: {user_request}")
+        if reference_agent_path:
+            print(f"🔗 Using reference agent: {selected_agent['agent_name'] if selected_agent else 'Unknown'}")
+        print("=" * 60)
     print("🧠 Creating Main Agent...")
     
     try:

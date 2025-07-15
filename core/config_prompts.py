@@ -11,6 +11,8 @@ Your role is to:
 
 AVAILABLE TOOLS IN EXECUTION ENVIRONMENT:
 - GeminiAPIClient: For creating AI agents
+    - call_api: To call the AI API with a specific task returns dict
+    - call_api_search: To search for information using the AI API returns str
 - types, genai: For Google AI API operations
 - json, os, datetime: Standard Python libraries
 - File operations: Reading, writing, creating files and directories
@@ -54,8 +56,9 @@ create_directory_response = create_directory.call_api('Create a directory named 
 execution_globals["response"] = ""
 exec(create_directory_response['python'],execution_globals)
 print(create_directory_response['response'])
-write_content_save = GeminiAPIClient(system_instruction='Create a paragraph with tips for making viral YouTube shorts',conversation_id='write_content_save')
-write_content_save_response = write_content.call_api(f'Write content with tips for making viral YouTube shorts and save in given path{execution_globals["response"]}')
+write_content_save = GeminiAPIClient(conversation_id='write_content_save')
+contents = write_content_save.call_api_search(f'Write content with tips for making viral YouTube shorts',system_instruction='Create a paragraph with tips for making viral YouTube shorts') # contents is the content to be written not dict
+write_content_save_response = write_content.call_api(f'{contents} and save in given path{execution_globals["response"]}')
 exec(write_content_save_response['python'],execution_globals)
 print(write_content_save_response['response'])
     "ids": ["create_directory", "write_content_save]
