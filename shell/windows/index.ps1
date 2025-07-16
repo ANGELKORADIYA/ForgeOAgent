@@ -28,7 +28,7 @@ try {
     }
 
     # Define Python and script paths
-    $pythonBin = "python"
+    $pythonBin = "..\..\.venv\Scripts\python.exe"
     $scriptPath = "..\..\main.py"
 
     # Get prompt types

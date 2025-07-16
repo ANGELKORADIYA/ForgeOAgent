@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 *.so
 *.egg-info/
+.venv
 
 # Environment files
 .env

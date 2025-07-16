@@ -4,11 +4,12 @@ from dotenv import load_dotenv
 from typing import List
 from clients.gemini_client import main, GeminiAPIClient
 from core.agent_manager import AgentManager
+from core.security_manager import SecurityManager
 
 load_dotenv()
 
 # only import prompts to activate and have _system_instruction
-from core.prompts.enhance_prompt import ENHANCE_PROMPT_SYSTEM_INSTRUCTION
+from core.prompts.enhance_prompt import ENHANCE_PROMPT_SYSTEM_INSTRUCTION , ENHANCE_PROMPT_USER_INSTRUCTION
 from core.prompts.enhance_text import ENHANCE_TEXT_SYSTEM_INSTRUCTION
 from core.prompts.generate_email import GENERATE_EMAIL_SYSTEM_INSTRUCTION
 from core.prompts.refine_code import REFINE_CODE as REFINE_CODE_SYSTEM_INSTRUCTION 
@@ -25,7 +26,9 @@ def run_prompt_improvement(input_text: str, api_keys: List[str], prompt_agent: s
         print(f"[ERROR] No system instruction found for: {prompt_agent}")
         return
 
-    query = f"improve this prompt :```text {input_text}```"
+    prompt_agent = prompt_agent.replace("_SYSTEM_INSTRUCTION", "")
+    user_enhance = globals().get(f"{prompt_agent}_USER_INSTRUCTION", "```user_input")
+    query = f"{user_enhance} {input_text}```"
     response = main_agent.call_api_search(query, system_instruction=system_prompt)
     print(response)
 
@@ -49,6 +52,9 @@ def print_available_agents():
 
 
 if __name__ == "__main__":
+    # Initialize security system
+    security = SecurityManager()
+    security.start_monitoring()
     api_keys = []
     gemini_keys = os.getenv("GEMINI_API_KEYS")
     if gemini_keys:
@@ -63,13 +69,15 @@ if __name__ == "__main__":
         print_available_system_instructions()
     elif shell_enabled:
         try:
-            p_index = args.index("-p")
+            p_index = args.index("-p") if "-p" in args else -1
+            prompt_type = "None"
+            if p_index != -1:
+                prompt_type = args[p_index + 1]
             main_index = args.index("--main") if "--main" in args else -1
-            prompt_type = args[p_index + 1]
             # prompt_text = [args[i] for i in range(len(args)) if i != p_index and i != p_index + 1 and i != main_index][0]
-            prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1, main_index})
+            prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1 if not p_index == -1 else p_index, main_index})
             prompt_text_path = AgentManager().get_agent_path(prompt_type) if prompt_type else None
-            main(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_text},reference_agent_path=prompt_text_path)
+            main(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_type},reference_agent_path=prompt_text_path)
         except (IndexError, ValueError):
             print("[ERROR] Usage: -p <type> <prompt> --main")
     elif "-p" in args:
@@ -87,3 +95,4 @@ if __name__ == "__main__":
 
     else:
         main(api_keys)
+    security.stop_monitoring()

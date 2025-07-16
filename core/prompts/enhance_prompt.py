@@ -65,3 +65,6 @@ Before finalizing improvements, verify:
 - ✓ Grammatically and spell is correct.
 
 If you dont have cue that return as it is input text trimmed with ```text"""
+
+
+ENHANCE_PROMPT_USER_INSTRUCTION = """improve this prompt :```text """

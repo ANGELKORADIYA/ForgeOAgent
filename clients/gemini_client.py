@@ -148,7 +148,9 @@ class GeminiAPIClient:
 
     def call_api(self, prompt: str, max_retries: int = 3, previous_conversation_log: bool = False,system_instruction:str = None) -> Dict[str, Any]:
         """Make API call with error handling and retry logic."""
-        if system_instruction is None and self.system_instruction is not None:
+        if system_instruction is not None:
+            system_instruction = system_instruction.strip()
+        elif system_instruction is None and self.system_instruction is not None:
             system_instruction = DEFAULT_SYSTEM_INSTRUCTION + "\n\n" + self.system_instruction
         else:
             system_instruction = DEFAULT_SYSTEM_INSTRUCTION
@@ -261,7 +263,9 @@ class GeminiAPIClient:
     def call_api_search(self, prompt: str, max_retries: int = 3,system_instruction:str = None) -> Dict[str, Any]:
         """Make API call with error handling and retry logic."""
         
-        if system_instruction is None and self.system_instruction is not None:
+        if system_instruction is not None:
+            system_instruction = system_instruction.strip()
+        elif system_instruction is None and self.system_instruction is not None:
             system_instruction = DEFAULT_SYSTEM_INSTRUCTION_SEARCH + "\n\n" + self.system_instruction # Not Needed
         else:
             system_instruction = DEFAULT_SYSTEM_INSTRUCTION_SEARCH

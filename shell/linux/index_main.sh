@@ -5,8 +5,9 @@ SELECTED_TEXT=$(xclip -selection primary -o 2>/dev/null || echo "")
 
 # Define Python and script paths dynamically based on current script location
 # SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PYTHON_BIN="../../main.py"
-SCRIPT_PATH="python"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHON_BIN="$SCRIPT_DIR/../../.venv/bin/python"
+SCRIPT_PATH="$SCRIPT_DIR/../../main.py"
 
 
 # Get prompt type list using -l and clean the output

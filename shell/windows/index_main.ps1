@@ -121,6 +121,64 @@ function Get-UserPrompt {
     return $null
 }
 
+function Get-PromptType {
+    param(
+        [string]$pythonBin,
+        [string]$scriptPath
+    )
+    # Get available prompt types
+    try {
+        $promptTypesRaw = & $pythonBin $scriptPath "-l" "--main"
+        if (-not $promptTypesRaw) {
+            Show-MessageBox -Message "No prompt types retrieved from script." -Type "Error"
+            exit 1
+        }
+        $promptTypes = $promptTypesRaw -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
+    }
+    catch {
+        Show-MessageBox -Message "Failed to fetch prompt types: $($_.Exception.Message)" -Type "Error"
+        exit 1
+    }
+
+    # Prompt user to select a prompt type
+    $selectDialog = New-Object System.Windows.Forms.Form
+    $selectDialog.Text = "Select Prompt Type"
+    $selectDialog.Size = New-Object System.Drawing.Size(400, 400)
+    $selectDialog.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+
+    $listBox = New-Object System.Windows.Forms.ListBox
+    $listBox.Location = New-Object System.Drawing.Point(20, 20)
+    $listBox.Size = New-Object System.Drawing.Size(340, 280)
+    $listBox.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+    $listBox.SelectionMode = "One"
+    $listBox.Items.AddRange($promptTypes)
+
+    $okBtn = New-Object System.Windows.Forms.Button
+    $okBtn.Text = "OK"
+    $okBtn.Location = New-Object System.Drawing.Point(190, 320)
+    $okBtn.Size = New-Object System.Drawing.Size(75, 30)
+    $okBtn.DialogResult = [System.Windows.Forms.DialogResult]::OK
+
+    $cancelBtn = New-Object System.Windows.Forms.Button
+    $cancelBtn.Text = "Cancel"
+    $cancelBtn.Location = New-Object System.Drawing.Point(285, 320)
+    $cancelBtn.Size = New-Object System.Drawing.Size(75, 30)
+    $cancelBtn.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+
+    $selectDialog.Controls.AddRange(@($listBox, $okBtn, $cancelBtn))
+    $selectDialog.AcceptButton = $okBtn
+    $selectDialog.CancelButton = $cancelBtn
+
+    $resultDialog = $selectDialog.ShowDialog()# This line was missing in the original file, causing the "not working" issue.
+
+    if ($resultDialog -ne [System.Windows.Forms.DialogResult]::OK -or !$listBox.SelectedItem) {
+        Show-MessageBox -Message "No prompt type selected. Operation cancelled." -Type "Information"
+        exit 1
+    }
+
+    return $listBox.SelectedItem
+}
+
 try {
     # Get clipboard content
     $clipboardText = ""
@@ -131,17 +189,21 @@ try {
     catch {
         $clipboardText = ""
     }
-    
-    # Get user prompt
-    $userPrompt = Get-UserPrompt -ClipboardText $clipboardText
-    if (-not $userPrompt) {
-        Show-MessageBox -Message "Operation cancelled" -Type "Information"
+    # Define Python and script paths
+    $pythonBin = "..\..\.venv\Scripts\python.exe"
+    $scriptPath = "..\..\main.py"
+    $selectedType = Get-PromptType -pythonBin $pythonBin -scriptPath $scriptPath
+    if (-not $selectedType) {
+        Show-MessageBox -Message "No prompt type selected. Operation cancelled." -Type "Information"
         exit 0
     }
     
-    # Define Python and script paths
-    $pythonBin = "python"
-    $scriptPath = "../../main.py"
+    # Get user prompt
+    $userPrompt = Get-UserPrompt -ClipboardText $clipboardText # This line was missing in the original file, causing the "not working" issue.
+    if (-not $userPrompt -or "$userPrompt".Trim() -eq "false") {
+        Show-MessageBox -Message "Operation cancelled" -Type "Information"
+        exit 0
+    }
     
     # Create final text with context if available
     $finalText = if ($clipboardText.Trim() -ne "") {
@@ -151,13 +213,13 @@ try {
     }
     
     # Show processing message
-    Write-Host "Processing prompt..." -ForegroundColor Green
+    Write-Host "Processing prompt... $finalText" -ForegroundColor Green
     
     # Process the prompt using the main functionality
     try {
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = $pythonBin
-        $psi.Arguments = "`"$scriptPath`" `"$finalText`" --main"
+        $psi.Arguments = "`"$scriptPath`" `"$finalText`" -p `"$selectedType`" --main"
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError = $true
         $psi.UseShellExecute = $false

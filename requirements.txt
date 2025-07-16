@@ -1,4 +1,3 @@
-google-generativeai
 requests
 dotenv
 google
