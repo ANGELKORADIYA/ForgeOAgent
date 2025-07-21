@@ -121,11 +121,148 @@ function Get-UserPrompt {
     return $null
 }
 
-function Get-PromptType {
-    param(
-        [string]$pythonBin,
-        [string]$scriptPath
-    )
+function Show-PromptTypeDialog {
+    param([array]$PromptTypes)
+    
+    # Create the form
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Select Prompt Type"
+    $form.Size = New-Object System.Drawing.Size(400, 350)
+    $form.StartPosition = "CenterScreen"
+    $form.FormBorderStyle = "FixedDialog"
+    $form.MaximizeBox = $false
+    $form.MinimizeBox = $false
+    
+    # Create ListBox for prompt types
+    $listBox = New-Object System.Windows.Forms.ListBox
+    $listBox.Location = New-Object System.Drawing.Point(20, 20)
+    $listBox.Size = New-Object System.Drawing.Size(340, 240)
+    $listBox.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+    $listBox.SelectionMode = "One"
+    foreach ($type in $PromptTypes) {
+        $listBox.Items.Add($type) | Out-Null
+    }
+    $form.Controls.Add($listBox)
+    
+    # Create OK button
+    $okButton = New-Object System.Windows.Forms.Button
+    $okButton.Location = New-Object System.Drawing.Point(130, 280)
+    $okButton.Size = New-Object System.Drawing.Size(75, 30)
+    $okButton.Text = "OK"
+    $okButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $okButton.Add_Click({
+        if ($listBox.SelectedItem) {
+            $form.Tag = @{
+                SelectedType = $listBox.SelectedItem.ToString()
+                UseNew = $false
+            }
+        }
+    })
+    $form.Controls.Add($okButton)
+    
+    # Create New button
+    $newButton = New-Object System.Windows.Forms.Button
+    $newButton.Location = New-Object System.Drawing.Point(50, 280)
+    $newButton.Size = New-Object System.Drawing.Size(75, 30)
+    $newButton.Text = "New"
+    $newButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    $newButton.Add_Click({
+        if ($listBox.SelectedItem) {
+            $form.Tag = @{
+                SelectedType = $listBox.SelectedItem.ToString()
+                UseNew = $true
+            }
+        }
+    })
+    $form.Controls.Add($newButton)
+    
+    # Create Cancel button
+    $cancelButton = New-Object System.Windows.Forms.Button
+    $cancelButton.Location = New-Object System.Drawing.Point(210, 280)
+    $cancelButton.Size = New-Object System.Drawing.Size(75, 30)
+    $cancelButton.Text = "Cancel"
+    $cancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+    $form.Controls.Add($cancelButton)
+    
+    # Set default button and cancel button
+    $form.AcceptButton = $okButton
+    $form.CancelButton = $cancelButton
+    
+    # Enable double-click to select
+    $listBox.Add_DoubleClick({
+        if ($listBox.SelectedItem) {
+            $form.Tag = @{
+                SelectedType = $listBox.SelectedItem.ToString()
+                UseNew = $false
+            }
+            $form.DialogResult = [System.Windows.Forms.DialogResult]::OK
+            $form.Close()
+        }
+    })
+    
+    # Show the dialog
+    $result = $form.ShowDialog()
+    
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK -and $form.Tag) {
+        return $form.Tag
+    }
+    
+    return $null
+}
+
+function Show-ResultDialog {
+    param([string]$Result)
+    
+    $resultDialog = New-Object System.Windows.Forms.Form
+    $resultDialog.Text = "Processing Result"
+    $resultDialog.Size = New-Object System.Drawing.Size(700, 500)
+    $resultDialog.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+    
+    $resultBox = New-Object System.Windows.Forms.TextBox
+    $resultBox.Location = New-Object System.Drawing.Point(20, 20)
+    $resultBox.Size = New-Object System.Drawing.Size(640, 380)
+    $resultBox.Multiline = $true
+    $resultBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
+    $resultBox.ReadOnly = $true
+    $resultBox.Text = $Result
+    $resultBox.Font = New-Object System.Drawing.Font("Segoe UI", 9)
+    
+    $copyButton = New-Object System.Windows.Forms.Button
+    $copyButton.Text = "Copy to Clipboard"
+    $copyButton.Location = New-Object System.Drawing.Point(20, 420)
+    $copyButton.Size = New-Object System.Drawing.Size(120, 30)
+    $copyButton.Add_Click({
+        $Result | Set-Clipboard
+        Show-MessageBox -Message "Result copied to clipboard!" -Type "Information"
+    })
+    
+    $closeButton = New-Object System.Windows.Forms.Button
+    $closeButton.Text = "Close"
+    $closeButton.Location = New-Object System.Drawing.Point(580, 420)
+    $closeButton.Size = New-Object System.Drawing.Size(80, 30)
+    $closeButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+    
+    $resultDialog.Controls.AddRange(@($resultBox, $copyButton, $closeButton))
+    $resultDialog.AcceptButton = $closeButton
+    
+    $resultDialog.ShowDialog() | Out-Null
+}
+
+try {
+    # Get clipboard content
+    $clipboardText = ""
+    try {
+        $clipboardText = Get-Clipboard -Raw -ErrorAction SilentlyContinue
+        if (-not $clipboardText) { $clipboardText = "" }
+    }
+    catch {
+        $clipboardText = ""
+    }
+    
+    # Define Python and script paths
+    $pythonBin = "..\..\.venv\Scripts\python.exe"
+    $scriptPath = "..\..\main.py"
+    
     # Get available prompt types
     try {
         $promptTypesRaw = & $pythonBin $scriptPath "-l" "--main"
@@ -140,66 +277,15 @@ function Get-PromptType {
         exit 1
     }
 
-    # Prompt user to select a prompt type
-    $selectDialog = New-Object System.Windows.Forms.Form
-    $selectDialog.Text = "Select Prompt Type"
-    $selectDialog.Size = New-Object System.Drawing.Size(400, 400)
-    $selectDialog.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
-
-    $listBox = New-Object System.Windows.Forms.ListBox
-    $listBox.Location = New-Object System.Drawing.Point(20, 20)
-    $listBox.Size = New-Object System.Drawing.Size(340, 280)
-    $listBox.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-    $listBox.SelectionMode = "One"
-    $listBox.Items.AddRange($promptTypes)
-
-    $okBtn = New-Object System.Windows.Forms.Button
-    $okBtn.Text = "OK"
-    $okBtn.Location = New-Object System.Drawing.Point(190, 320)
-    $okBtn.Size = New-Object System.Drawing.Size(75, 30)
-    $okBtn.DialogResult = [System.Windows.Forms.DialogResult]::OK
-
-    $cancelBtn = New-Object System.Windows.Forms.Button
-    $cancelBtn.Text = "Cancel"
-    $cancelBtn.Location = New-Object System.Drawing.Point(285, 320)
-    $cancelBtn.Size = New-Object System.Drawing.Size(75, 30)
-    $cancelBtn.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
-
-    $selectDialog.Controls.AddRange(@($listBox, $okBtn, $cancelBtn))
-    $selectDialog.AcceptButton = $okBtn
-    $selectDialog.CancelButton = $cancelBtn
-
-    $resultDialog = $selectDialog.ShowDialog()# This line was missing in the original file, causing the "not working" issue.
-
-    if ($resultDialog -ne [System.Windows.Forms.DialogResult]::OK -or !$listBox.SelectedItem) {
-        Show-MessageBox -Message "No prompt type selected. Operation cancelled." -Type "Information"
-        exit 1
-    }
-
-    return $listBox.SelectedItem
-}
-
-try {
-    # Get clipboard content
-    $clipboardText = ""
-    try {
-        $clipboardText = Get-Clipboard -Raw -ErrorAction SilentlyContinue
-        if (-not $clipboardText) { $clipboardText = "" }
-    }
-    catch {
-        $clipboardText = ""
-    }
-    # Define Python and script paths
-    $pythonBin = "..\..\.venv\Scripts\python.exe"
-    $scriptPath = "..\..\main.py"
-    $selectedType = Get-PromptType -pythonBin $pythonBin -scriptPath $scriptPath
-    if (-not $selectedType) {
+    # Show custom selection dialog with OK/Cancel/New buttons
+    $selection = Show-PromptTypeDialog -PromptTypes $promptTypes
+    if (-not $selection) {
         Show-MessageBox -Message "No prompt type selected. Operation cancelled." -Type "Information"
         exit 0
     }
     
     # Get user prompt
-    $userPrompt = Get-UserPrompt -ClipboardText $clipboardText # This line was missing in the original file, causing the "not working" issue.
+    $userPrompt = Get-UserPrompt -ClipboardText $clipboardText
     if (-not $userPrompt -or "$userPrompt".Trim() -eq "false") {
         Show-MessageBox -Message "Operation cancelled" -Type "Information"
         exit 0
@@ -213,13 +299,19 @@ try {
     }
     
     # Show processing message
-    Write-Host "Processing prompt... $finalText" -ForegroundColor Green
+    Write-Host "Processing prompt..." -ForegroundColor Green
+    
+    # Build command arguments
+    $args = @("`"$scriptPath`"", "`"$finalText`"", "-p", "`"$($selection.SelectedType)`"", "--main")
+    if ($selection.UseNew) {
+        $args += "--new"
+    }
     
     # Process the prompt using the main functionality
     try {
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = $pythonBin
-        $psi.Arguments = "`"$scriptPath`" `"$finalText`" -p `"$selectedType`" --main"
+        $psi.Arguments = $args -join " "
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError = $true
         $psi.UseShellExecute = $false
@@ -236,41 +328,15 @@ try {
             $result | Set-Clipboard
             
             # Show result in a dialog
-            $resultDialog = New-Object System.Windows.Forms.Form
-            $resultDialog.Text = "Processing Result"
-            $resultDialog.Size = New-Object System.Drawing.Size(700, 500)
-            $resultDialog.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
+            Show-ResultDialog -Result $result
             
-            $resultBox = New-Object System.Windows.Forms.TextBox
-            $resultBox.Location = New-Object System.Drawing.Point(20, 20)
-            $resultBox.Size = New-Object System.Drawing.Size(640, 380)
-            $resultBox.Multiline = $true
-            $resultBox.ScrollBars = [System.Windows.Forms.ScrollBars]::Vertical
-            $resultBox.ReadOnly = $true
-            $resultBox.Text = $result
-            $resultBox.Font = New-Object System.Drawing.Font("Segoe UI", 9)
-            
-            $copyButton = New-Object System.Windows.Forms.Button
-            $copyButton.Text = "Copy to Clipboard"
-            $copyButton.Location = New-Object System.Drawing.Point(20, 420)
-            $copyButton.Size = New-Object System.Drawing.Size(120, 30)
-            $copyButton.Add_Click({
-                $result | Set-Clipboard
-                Show-MessageBox -Message "Result copied to clipboard!" -Type "Information"
-            })
-            
-            $closeButton = New-Object System.Windows.Forms.Button
-            $closeButton.Text = "Close"
-            $closeButton.Location = New-Object System.Drawing.Point(580, 420)
-            $closeButton.Size = New-Object System.Drawing.Size(80, 30)
-            $closeButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
-            
-            $resultDialog.Controls.AddRange(@($resultBox, $copyButton, $closeButton))
-            $resultDialog.AcceptButton = $closeButton
-            
-            $resultDialog.ShowDialog() | Out-Null
-            
-            Show-MessageBox -Message "Processing completed successfully! Result has been copied to clipboard." -Type "Information"
+            # Show success message with indication if --new was used
+            $successMessage = if ($selection.UseNew) {
+                "Processing completed successfully with --new flag! Result has been copied to clipboard."
+            } else {
+                "Processing completed successfully! Result has been copied to clipboard."
+            }
+            Show-MessageBox -Message $successMessage -Type "Information"
         } else {
             Show-MessageBox -Message "Error: Processing failed`n$errorResult" -Type "Error"
         }

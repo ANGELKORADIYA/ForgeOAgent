@@ -23,6 +23,35 @@ if [ -z "$SELECTED_TYPE" ]; then
     exit 1
 fi
 
+
+# Now show action dialog with the selected type
+zenity --question \
+    --title="Process: $SELECTED_TYPE" \
+    --text="How do you want to process '$SELECTED_TYPE'?" \
+    --ok-label="Process Normal" \
+    --cancel-label="Process New" 2>/dev/null
+
+# Get the exit code to determine which button was pressed
+ZENITY_EXIT_CODE=$?
+
+# Handle button selection
+case $ZENITY_EXIT_CODE in
+    0)  # OK button pressed (Process Normal)
+        SELECTED_TYPE="$SELECTED_TYPE"
+        USE_NEW_FLAG=""
+        BUTTON_TYPE=""
+        ;;
+    1)  # Cancel button pressed (Process New)
+        SELECTED_TYPE="$SELECTED_TYPE"
+        USE_NEW_FLAG="--new"
+        BUTTON_TYPE="(NEW)"
+        ;;
+    *)  # Dialog closed with X or ESC
+        notify-send "Cancelled" "Dialog cancelled"
+        exit 1
+        ;;
+esac
+
 # Determine context content based on selected text
 if [ -n "$SELECTED_TEXT" ]; then
     # Check if selected text is a file path
@@ -93,7 +122,14 @@ else
 fi
 
 # Call Python script with final text
-RESULT=$("$PYTHON_BIN" "$SCRIPT_PATH" "$FINAL_TEXT" -p "$SELECTED_TYPE" --main)
+if [ -n "$USE_NEW_FLAG" ]; then
+    RESULT=$("$PYTHON_BIN" "$SCRIPT_PATH" "$FINAL_TEXT" -p "$SELECTED_TYPE" --main "$USE_NEW_FLAG")
+    BUTTON_TYPE="(NEW)"
+else
+    RESULT=$("$PYTHON_BIN" "$SCRIPT_PATH" "$FINAL_TEXT" -p "$SELECTED_TYPE" --main)
+
+    BUTTON_TYPE=""
+fi
 
 # Display result in a dialog and notify
 if [ $? -eq 0 ]; then

@@ -13,11 +13,13 @@ from core.prompts.enhance_prompt import ENHANCE_PROMPT_SYSTEM_INSTRUCTION , ENHA
 from core.prompts.enhance_text import ENHANCE_TEXT_SYSTEM_INSTRUCTION
 from core.prompts.generate_email import GENERATE_EMAIL_SYSTEM_INSTRUCTION
 from core.prompts.refine_code import REFINE_CODE as REFINE_CODE_SYSTEM_INSTRUCTION 
+from core.prompts.regex import REGEX_SYSTEM_INSTRUCTION 
+from core.prompts.what_word import WHAT_WORD_SYSTEM_INSTRUCTION 
 
 
-def run_prompt_improvement(input_text: str, api_keys: List[str], prompt_agent: str):
+def run_prompt_improvement(input_text: str, api_keys: List[str], prompt_agent: str,new_content:bool=False):
     """Run Gemini API prompt improvement using the given system instruction."""
-    main_agent = GeminiAPIClient(api_keys=api_keys)
+    main_agent = GeminiAPIClient(api_keys=api_keys,new_content=new_content)
     prompt_agent = prompt_agent.strip().upper()
     if not prompt_agent.endswith("_SYSTEM_INSTRUCTION"):
         prompt_agent += "_SYSTEM_INSTRUCTION"
@@ -70,12 +72,13 @@ if __name__ == "__main__":
     elif shell_enabled:
         try:
             p_index = args.index("-p") if "-p" in args else -1
+            n_index = args.index("--new") if "--new" in args else -1
             prompt_type = "None"
             if p_index != -1:
                 prompt_type = args[p_index + 1]
             main_index = args.index("--main") if "--main" in args else -1
             # prompt_text = [args[i] for i in range(len(args)) if i != p_index and i != p_index + 1 and i != main_index][0]
-            prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1 if not p_index == -1 else p_index, main_index})
+            prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1 if not p_index == -1 else p_index, main_index,n_index})
             prompt_text_path = AgentManager().get_agent_path(prompt_type) if prompt_type else None
             main(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_type},reference_agent_path=prompt_text_path)
         except (IndexError, ValueError):
@@ -83,16 +86,21 @@ if __name__ == "__main__":
     elif "-p" in args:
         try:
             p_index = args.index("-p")
+            n_index = args.index("--new") if "--new" in args else -1
             prompt_type = args[p_index + 1]
-            prompt_text = args[p_index + 2]
-            run_prompt_improvement(prompt_text, api_keys, prompt_type)
+            prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1 if not p_index == -1 else p_index,n_index})
+            if n_index != -1:
+                run_prompt_improvement(prompt_text, api_keys, prompt_type,new_content=True)
+            else:
+                run_prompt_improvement(prompt_text, api_keys, prompt_type,new_content=False)
         except (IndexError, ValueError):
             print("[ERROR] Usage: -p <type> <prompt>")
 
     elif len(args) == 1:
         input_text = args[0]
-        run_prompt_improvement(input_text, api_keys, "ENHANCE_PROMPT_SYSTEM_INSTRUCTION")
-
+        main_agent = GeminiAPIClient(api_keys=api_keys,new_content=True)
+        response = main_agent.call_api_search(input_text)
+        print(response)
     else:
         main(api_keys)
     security.stop_monitoring()

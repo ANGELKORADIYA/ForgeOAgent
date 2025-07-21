@@ -39,13 +39,14 @@ class GeminiAPIClient:
                  model: str = DEFAULT_MODEL,
                  conversation_id: str = None,
                  safety_settings: List[types.SafetySetting] = DEFAULT_SAFETY_SETTINGS,
-                 reference_json: Any = None):
+                 reference_json: Any = None,
+                 new_content: bool = False):
         self.model = model
         self.output_required = output_required
         self.output_properties = output_properties
         self.safety_settings = safety_settings
         self.reference_json = reference_json
-
+        self.new_content = new_content
         if api_keys is not None:
             GlobalAPIKeyManager.initialize(api_keys)
         
@@ -54,14 +55,37 @@ class GeminiAPIClient:
         else:
             self.system_instruction = None
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.conversation_id = conversation_id or f"agent_{timestamp}_{uuid.uuid4().hex[:8]}"
-
+        
+        if self.new_content:
+            self.conversation_id = conversation_id or f"agent_{timestamp}_{uuid.uuid4().hex[:8]}"
+        else:
+            # If not creating new content and no ID is given, try to use the last one from logs.
+            last_id = self._get_last_conversation_id()
+            self.conversation_id = last_id or conversation_id or f"agent_{timestamp}_{uuid.uuid4().hex[:8]}"
+            
         self._contents = []
         self.request_count = 0
         self.log_file = f"logs/{self.conversation_id}.jsonl"
 
         os.makedirs("logs", exist_ok=True)
         self._init_log_file()
+
+    def _get_last_conversation_id(self) -> Optional[str]:
+        """Gets the most recent conversation ID from the 'logs' directory."""
+        logs_dir = "logs"
+        if not os.path.isdir(logs_dir):
+            return None
+        
+        log_files = [f for f in os.listdir(logs_dir) if f.endswith('.jsonl') and f.startswith('agent_')]
+        if not log_files:
+            return None
+        
+        try:
+            full_paths = [os.path.join(logs_dir, f) for f in log_files]
+            latest_file = max(full_paths, key=os.path.getmtime)
+            return os.path.basename(latest_file)[:-6]  # Remove .jsonl
+        except (ValueError, FileNotFoundError):
+            return None
     
     def _init_log_file(self):
         """Initialize the log file with metadata."""
@@ -146,8 +170,9 @@ class GeminiAPIClient:
                         continue
         return contents
 
-    def call_api(self, prompt: str, max_retries: int = 3, previous_conversation_log: bool = False,system_instruction:str = None) -> Dict[str, Any]:
+    def call_api(self, prompt: str, max_retries: int = 3, previous_conversation_log: bool = True,system_instruction:str = None) -> Dict[str, Any]:
         """Make API call with error handling and retry logic."""
+        
         if system_instruction is not None:
             system_instruction = system_instruction.strip()
         elif system_instruction is None and self.system_instruction is not None:
@@ -164,7 +189,7 @@ class GeminiAPIClient:
         if self.reference_json:
             contents.extend(self._get_referenced_agent_json_contents(self.reference_json))
         # 2. Add previous conversation
-        if previous_conversation_log:
+        if previous_conversation_log and not self.new_content:
             contents.extend(self._get_previous_conversation_contents())
         
         # 3. Add current conversation prompts
@@ -177,6 +202,7 @@ class GeminiAPIClient:
         ))
         
         self._contents.append(contents[-1])
+        
         # Print contents in a nice way: model:text
         print("\nConversation contents so far:")
         for c in contents:
@@ -186,6 +212,7 @@ class GeminiAPIClient:
                 text = c.parts[0].text
             print(f"{c.role}: {text}")
         print("-" * 40)
+        
         for retry in range(max_retries):
             api_key = None
             try:
@@ -274,7 +301,9 @@ class GeminiAPIClient:
         manager = GlobalAPIKeyManager()
 
         contents = []
-        
+        if not self.new_content:
+            contents.extend(self._get_previous_conversation_contents())
+            
         contents.append(types.Content(
             role="user",
             parts=[types.Part.from_text(text=prompt)]
@@ -370,7 +399,7 @@ class GeminiAPIClient:
 
 
 
-def main(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None , shell_enabled:bool = False) -> Dict[str, Any]:
+def main(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None , shell_enabled:bool = False,new_content:bool = False) -> Dict[str, Any]:
     """Create the main agent responsible for generating Python code with interactive agent selection."""
     print("🚀 AI Agent System")
     print("=" * 60)
@@ -407,7 +436,8 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
             output_required=MAIN_AGENT_OUTPUT_REQUIRED,
             output_properties=MAIN_AGENT_OUTPUT_PROPERTIES,
             conversation_id=conversation_id,
-            reference_json=reference_agent_path or './merge_current_dir_agent'
+            reference_json=reference_agent_path or './merge_current_dir_agent',
+            new_content=new_content
         )
         
         main_agent_response = main_agent.call_api(user_request)
