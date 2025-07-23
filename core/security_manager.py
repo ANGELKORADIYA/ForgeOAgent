@@ -3,7 +3,7 @@ import time
 import threading
 
 class SecurityManager:
-    def __init__(self, killswitch_path="../.killswitch", timeout_seconds=120):
+    def __init__(self, killswitch_path="../.killswitch", timeout_seconds=10000):
         # Construct the path relative to this script's file location, ensuring it's
         # independent of the current working directory. The final path is resolved
         # to an absolute path for reliability.

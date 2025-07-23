@@ -13,6 +13,7 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 - Gemini tasks and results are automatically logged for future reference
 - Cross-platform shell support (Windows & Linux)
 - Modular agent and client architecture for easy extension
+- Store Last Chat Messages if use pick normal
 
 ## 📁 Directory Structure
 - `main.py` — Entry point for running agents and workflows

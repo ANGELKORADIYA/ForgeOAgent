@@ -133,17 +133,52 @@ fi
 
 # Display result in a dialog and notify
 if [ $? -eq 0 ]; then
-    # For long results, use scrollable text-info dialog
+    # For long results, use scrollable text-info dialog with OK/Cancel
     if [ ${#RESULT} -gt 500 ]; then
         echo "$RESULT" | zenity --text-info \
             --title="Result" \
             --width=800 \
             --height=600 \
-            --editable=false
+            --editable=false \
+            --ok-label="OK" \
+            --cancel-label="Cancel"
+        RESULT_DIALOG_EXIT=$?
     else
-        zenity --info --title="Result" --text="$RESULT" --width=600
+        zenity --question \
+            --title="Result" \
+            --text="$RESULT" \
+            --width=600 \
+            --ok-label="OK" \
+            --cancel-label="Cancel"
+        RESULT_DIALOG_EXIT=$?
     fi
-    notify-send "Success" "Prompt processed"
+    
+    # Only ask about saving if user clicked OK
+    if [ $RESULT_DIALOG_EXIT -eq 0 ]; then
+            # Get save name from user
+            SAVE_NAME=$(zenity --entry \
+                --title="Save Result" \
+                --text="Enter a name for saving this result:" \
+                --entry-text="" \
+                --width=400)
+            
+            # Check if user provided a name and didn't cancel
+            if [ $? -eq 0 ] && [ -n "$SAVE_NAME" ]; then
+                # Call Python script with save functionality
+                SAVE_RESULT=$("$PYTHON_BIN" "$SCRIPT_PATH" --save "$SAVE_NAME")
+                
+                if [ $? -eq 0 ]; then
+                    notify-send "Saved" "Result saved as: $SAVE_NAME"
+                else
+                    notify-send "Error" "Failed to save result"
+                fi
+            else
+                notify-send "Cancelled" "Save cancelled - no name provided"
+            fi
+        fi
+    else
+        notify-send "Cancelled" "Result dialog cancelled"
+    fi
 else
     notify-send "Error" "Failed to process prompt"
     exit 1

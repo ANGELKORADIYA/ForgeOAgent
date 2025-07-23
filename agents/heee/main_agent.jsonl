@@ -1,0 +1,2 @@
+{"type": "metadata", "agent_name": "heee", "conversation_id": "main_agent_from_None_20250723_222844", "saved_at": "2025-07-23T22:28:53.605090", "model": "gemini-1.5-flash"}
+{"type": "interaction", "timestamp": "2025-07-23T22:28:48.222462", "request_count": 1, "success": true, "input": "False HELLO\n<context>main_agent</context>", "response": {"explanation": "", "python": "", "ids": [], "response": "", "imports": []}}

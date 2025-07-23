@@ -27,6 +27,12 @@ from google.api_core.exceptions import Unauthenticated, ResourceExhausted, Googl
 # Ensure UTF-8 encoding for stdout
 sys.stdout.reconfigure(encoding='utf-8')
 
+LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
+MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "main_agent")
+AGENT_LOG_DIR = os.path.join(LOG_DIR, "agent")
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
+os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
 class GeminiAPIClient:
     """Simplified Gemini API client with better error handling."""
@@ -54,29 +60,25 @@ class GeminiAPIClient:
             self.system_instruction = DEFAULT_SYSTEM_INSTRUCTION + "\n\n" + system_instruction
         else:
             self.system_instruction = None
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        if self.new_content:
-            self.conversation_id = conversation_id or f"agent_{timestamp}_{uuid.uuid4().hex[:8]}"
-        else:
-            # If not creating new content and no ID is given, try to use the last one from logs.
-            last_id = self._get_last_conversation_id()
-            self.conversation_id = last_id or conversation_id or f"agent_{timestamp}_{uuid.uuid4().hex[:8]}"
+        self.conversation_id = conversation_id or f"agent_{self.timestamp}_{uuid.uuid4().hex[:8]}"
             
         self._contents = []
         self.request_count = 0
-        self.log_file = f"logs/{self.conversation_id}.jsonl"
+        self.log_file = f"{LOG_DIR}/{self.conversation_id}.jsonl"
 
-        os.makedirs("logs", exist_ok=True)
+
         self._init_log_file()
 
-    def _get_last_conversation_id(self) -> Optional[str]:
+    @staticmethod
+    def _get_last_conversation_id(type:str = "agent") -> Optional[str]:
         """Gets the most recent conversation ID from the 'logs' directory."""
-        logs_dir = "logs"
+        logs_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..", "logs", type))
         if not os.path.isdir(logs_dir):
             return None
         
-        log_files = [f for f in os.listdir(logs_dir) if f.endswith('.jsonl') and f.startswith('agent_')]
+        log_files = [f for f in os.listdir(logs_dir) if f.endswith('.jsonl') and f.startswith(f'{type}_')]
         if not log_files:
             return None
         
@@ -150,9 +152,13 @@ class GeminiAPIClient:
                             continue
         return contents
 
-    def _get_previous_conversation_contents(self) -> list:
+    def _get_previous_conversation_contents(self,type:str = "agent") -> list:
         """Read previous conversation from the current log file and return as Gemini contents."""
         contents = []
+        last_id = self._get_last_conversation_id(type)
+        self.conversation_id = last_id or self.conversation_id or f"agent_{self.timestamp}_{uuid.uuid4().hex[:8]}"
+        self.log_file = f"{LOG_DIR}/{type}/{self.conversation_id}.jsonl"
+
         if os.path.exists(self.log_file):
             with open(self.log_file, 'r', encoding='utf-8') as f:
                 for line in f:
@@ -190,7 +196,7 @@ class GeminiAPIClient:
             contents.extend(self._get_referenced_agent_json_contents(self.reference_json))
         # 2. Add previous conversation
         if previous_conversation_log and not self.new_content:
-            contents.extend(self._get_previous_conversation_contents())
+            contents.extend(self._get_previous_conversation_contents('main_agent'))
         
         # 3. Add current conversation prompts
         contents.extend(self._contents)
@@ -302,7 +308,7 @@ class GeminiAPIClient:
 
         contents = []
         if not self.new_content:
-            contents.extend(self._get_previous_conversation_contents())
+            contents.extend(self._get_previous_conversation_contents('agent'))
             
         contents.append(types.Content(
             role="user",
@@ -332,6 +338,7 @@ class GeminiAPIClient:
                 )
                 if response.candidates and response.candidates[0].content:
                     try:
+                        self._log_interaction(prompt, response.text, success=True)
                         return response.text
                         
                     except json.JSONDecodeError as e:
@@ -426,7 +433,7 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
     try:
         # Create conversation ID based on whether using existing agent or new
         if selected_agent:
-            conversation_id = f"agent_from_{selected_agent['agent_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            conversation_id = f"main_agent_from_{selected_agent['agent_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         else:
             conversation_id = f"main_agent_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             

@@ -6,7 +6,7 @@ from datetime import datetime
 class AgentManager:
     """Manages saving and loading of agents."""
     
-    def __init__(self, agents_dir: str = "./agents"):
+    def __init__(self, agents_dir: str = f"{os.path.join(os.path.dirname(__file__))}/../agents"):
         self.agents_dir = agents_dir
         os.makedirs(agents_dir, exist_ok=True)
     
@@ -17,7 +17,7 @@ class AgentManager:
             os.makedirs(agent_folder, exist_ok=True)
             
             # Read the log file and get only the last main agent interaction
-            log_file = f"logs/{conversation_id}.jsonl"
+            log_file = f"{self.agents_dir}/../logs/main_agent/{conversation_id}.jsonl"
             if os.path.exists(log_file):
                 last_interaction = None
                 

@@ -236,12 +236,85 @@ function Show-ResultDialog {
         Show-MessageBox -Message "Result copied to clipboard!" -Type "Information"
     })
     
+    $saveButton = New-Object System.Windows.Forms.Button
+    $saveButton.Text = "Save"
+    $saveButton.Location = New-Object System.Drawing.Point(150, 420)
+    $saveButton.Size = New-Object System.Drawing.Size(80, 30)
+    $saveButton.Add_Click({
+        # Show input dialog for save name
+        $saveDialog = New-Object System.Windows.Forms.Form
+        $saveDialog.Text = "Save Prompt Type"
+        $saveDialog.Size = New-Object System.Drawing.Size(400, 150)
+        $saveDialog.StartPosition = "CenterScreen"
+        $saveDialog.FormBorderStyle = "FixedDialog"
+        $saveDialog.MaximizeBox = $false
+        $saveDialog.MinimizeBox = $false
+        
+        $saveLabel = New-Object System.Windows.Forms.Label
+        $saveLabel.Text = "Enter name for the prompt type:"
+        $saveLabel.Location = New-Object System.Drawing.Point(20, 20)
+        $saveLabel.Size = New-Object System.Drawing.Size(300, 20)
+        
+        $saveTextBox = New-Object System.Windows.Forms.TextBox
+        $saveTextBox.Location = New-Object System.Drawing.Point(20, 45)
+        $saveTextBox.Size = New-Object System.Drawing.Size(340, 25)
+        
+        $saveOkButton = New-Object System.Windows.Forms.Button
+        $saveOkButton.Text = "Save"
+        $saveOkButton.Location = New-Object System.Drawing.Point(200, 80)
+        $saveOkButton.Size = New-Object System.Drawing.Size(75, 30)
+        $saveOkButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
+        
+        $saveCancelButton = New-Object System.Windows.Forms.Button
+        $saveCancelButton.Text = "Cancel"
+        $saveCancelButton.Location = New-Object System.Drawing.Point(285, 80)
+        $saveCancelButton.Size = New-Object System.Drawing.Size(75, 30)
+        $saveCancelButton.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
+        
+        $saveDialog.Controls.AddRange(@($saveLabel, $saveTextBox, $saveOkButton, $saveCancelButton))
+        $saveDialog.AcceptButton = $saveOkButton
+        $saveDialog.CancelButton = $saveCancelButton
+        
+        $saveResult = $saveDialog.ShowDialog()
+        
+        if ($saveResult -eq [System.Windows.Forms.DialogResult]::OK -and $saveTextBox.Text.Trim() -ne "") {
+            # Call main.py with --save parameter
+            try {
+                $pythonBin = "..\..\.venv\Scripts\python.exe"
+                $scriptPath = "..\..\main.py"
+                $saveArgs = @("`"$scriptPath`"", "--save", "`"$($saveTextBox.Text.Trim())`"")
+                
+                $psi = New-Object System.Diagnostics.ProcessStartInfo
+                $psi.FileName = $pythonBin
+                $psi.Arguments = $saveArgs -join " "
+                $psi.RedirectStandardOutput = $true
+                $psi.RedirectStandardError = $true
+                $psi.UseShellExecute = $false
+                
+                $process = [System.Diagnostics.Process]::Start($psi)
+                $saveOutput = $process.StandardOutput.ReadToEnd()
+                $saveError = $process.StandardError.ReadToEnd()
+                $process.WaitForExit()
+                
+                if ($process.ExitCode -eq 0) {
+                    Show-MessageBox -Message "Prompt type saved successfully!" -Type "Information"
+                } else {
+                    Show-MessageBox -Message "Error saving prompt type: $saveError" -Type "Error"
+                }
+            }
+            catch {
+                Show-MessageBox -Message "Error saving prompt type: $($_.Exception.Message)" -Type "Error"
+            }
+        }
+    })
+    $resultDialog.Controls.Add($saveButton)
+    
     $closeButton = New-Object System.Windows.Forms.Button
     $closeButton.Text = "Close"
     $closeButton.Location = New-Object System.Drawing.Point(580, 420)
     $closeButton.Size = New-Object System.Drawing.Size(80, 30)
     $closeButton.DialogResult = [System.Windows.Forms.DialogResult]::OK
-    
+      
     $resultDialog.Controls.AddRange(@($resultBox, $copyButton, $closeButton))
     $resultDialog.AcceptButton = $closeButton
     

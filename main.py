@@ -69,6 +69,16 @@ if __name__ == "__main__":
         print_available_agents()
     elif "-l" in args and not shell_enabled:
         print_available_system_instructions()
+    elif "--save" in args:
+        try:
+            conversation_id = GeminiAPIClient._get_last_conversation_id('main_agent')
+            agent_name = next(args[i] for i in range(len(args)) if i not in {args.index("--save") if "--save" in args else -1})
+        except:
+            agent_name = conversation_id
+        AgentManager().save_agent(
+                        agent_name=agent_name,
+                        conversation_id=conversation_id
+                    )
     elif shell_enabled:
         try:
             p_index = args.index("-p") if "-p" in args else -1
@@ -80,7 +90,7 @@ if __name__ == "__main__":
             # prompt_text = [args[i] for i in range(len(args)) if i != p_index and i != p_index + 1 and i != main_index][0]
             prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1 if not p_index == -1 else p_index, main_index,n_index})
             prompt_text_path = AgentManager().get_agent_path(prompt_type) if prompt_type else None
-            main(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_type},reference_agent_path=prompt_text_path)
+            main(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_type},reference_agent_path=prompt_text_path,new_content=True if n_index != -1 else False)
         except (IndexError, ValueError):
             print("[ERROR] Usage: -p <type> <prompt> --main")
     elif "-p" in args:
