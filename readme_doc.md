@@ -57,7 +57,7 @@ This Python code defines a robust client for interacting with the Google Gemini 
 *   **Conversation Logging & History**: Automatically logs all API interactions (prompts, responses, errors) to `.jsonl` files, indexed by a conversation ID, and can load previous conversation history to maintain context.
 *   **Reference Agent Context**: Allows feeding previous agent interactions from specified log folders (`.jsonl` files) as contextual information to the Gemini model, enabling more informed responses.
 *   **Dynamic Code Generation & Execution**: Designed to receive Python code within JSON responses from the Gemini API and safely execute it within a controlled environment, providing access to essential modules and utilities.
-*   **Package Installation**: Automatically detects required Python packages from the generated code's `imports` and uses `pip_installer` to install them before execution.
+*   **Package Installation**: Automatically detects required Python packages from the generated code's `imports` and uses `pip_install_manager` to install them before execution.
 *   **Error Handling and Retries**: Implements comprehensive error handling for API calls (including specific Gemini API exceptions) and internal operations, with configurable retry attempts.
 *   **Configurable Prompts and Schema**: Utilizes external configuration for system instructions, required output properties, and JSON response schema validation for structured outputs.
 *   **Interactive Agent Management**: The `main` function supports interactive selection, creation, and saving of AI agents, facilitating reusability.
@@ -69,7 +69,7 @@ This Python code defines a robust client for interacting with the Google Gemini 
 *   **Intelligent Automation Frameworks**: Serve as a core component for systems requiring dynamic, AI-driven automation based on complex instructions.
 *   **Interactive Development Environment**: Act as an intelligent assistant that can understand user goals, write code, and execute it, accelerating development workflows.
 
-### `core\agent_manager.py`
+### `core\managers\agent_manager.py`
 ### Functionality
 The `AgentManager` class is designed to manage the saving, listing, and selection of conversational agents. It facilitates the persistence of agent interaction logs and metadata, primarily focusing on the last successful interaction of a "main" agent. It organizes saved agent data within a designated directory structure, making it easy to retrieve previously used agent configurations and their relevant conversation history.
 
@@ -89,7 +89,7 @@ The `AgentManager` class is designed to manage the saving, listing, and selectio
 *   **Demonstration and Portfolio**: Enables developers to easily showcase different trained or configured agents by loading them from saved states.
 *   **User Experience Enhancement**: Provides a streamlined way for users of an AI application to pick up where they left off with a particular agent or to switch between different agent personalities/tasks.
 
-### `core\api_key_manager.py`
+### `core\managers\api_key_manager.py`
 ### Functionality
 This Python class, `GlobalAPIKeyManager`, serves as a singleton for robustly managing a pool of API keys. Its core functionality involves providing a thread-safe mechanism to retrieve API keys, intelligently rotating through them, marking failed keys to prevent their immediate reuse, and automatically resetting their status daily. It also tracks usage statistics (requests and failures) for each key and provides a detailed status report.
 
@@ -117,7 +117,7 @@ This Python class, `GlobalAPIKeyManager`, serves as a singleton for robustly man
 This Python code primarily defines the core configurations, system instructions, and output schemas for various AI agents within an AI-powered system. It sets the behavioral guidelines, available tools, and expected output formats for a "Master Agent Creator," a general-purpose AI assistant, a web search agent, and a prompt enhancement agent.
 
 ### Features
-*   **Master Agent Configuration**: Defines the `MAIN_AGENT_SYSTEM_INSTRUCTION` for an agent that breaks down user requests into executable Python code, listing available tools (like `GeminiAPIClient`, `os`, `json`, `pip_installer`) and strict safety constraints.
+*   **Master Agent Configuration**: Defines the `MAIN_AGENT_SYSTEM_INSTRUCTION` for an agent that breaks down user requests into executable Python code, listing available tools (like `GeminiAPIClient`, `os`, `json`, `pip_install_manager`) and strict safety constraints.
 *   **Structured Output Definition**: Uses `google.genai.types.Schema` to specify the exact JSON output format required for the Master Agent (including `explanation`, `python` code, task `ids`, and `imports`).
 *   **Default AI Assistant Settings**: Provides a `DEFAULT_SYSTEM_INSTRUCTION` for a general AI assistant, emphasizing safety, error handling, and privacy. It also defines its expected output structure.
 *   **Safety Constraints Enforcement**: Explicitly lists core safety constraints that all agents must follow, such as preventing modification of system-critical files, validating paths, and respecting privacy.
@@ -131,9 +131,9 @@ This Python code primarily defines the core configurations, system instructions,
 *   **Task Automation**: Used to define the operational rules and expected outputs for AI components in broader task automation or workflow management systems.
 *   **Standardizing AI Agent Behavior**: Provides a centralized place to define consistent instructions, constraints, and output formats across various AI functionalities within an application.
 
-### `core\pip_installer.py`
+### `core\managers\pip_install_manager.py`
 ### Functionality
-This Python code provides a highly secure and robust mechanism for programmatically installing Python packages using `pip`. Its primary function, `pip_installer`, takes a list of package names and attempts to install them one by one. It integrates multiple layers of security validation for package names, preventing common vulnerabilities such as command injection, path traversal, and the use of dangerous pip options. The module handles errors gracefully, provides detailed feedback on successful and failed installations, and includes timeouts for each installation attempt.
+This Python code provides a highly secure and robust mechanism for programmatically installing Python packages using `pip`. Its primary function, `pip_install_manager`, takes a list of package names and attempts to install them one by one. It integrates multiple layers of security validation for package names, preventing common vulnerabilities such as command injection, path traversal, and the use of dangerous pip options. The module handles errors gracefully, provides detailed feedback on successful and failed installations, and includes timeouts for each installation attempt.
 
 ### Features
 *   **Comprehensive Security Validation**: Employs strict validation rules (`_is_package_name_safe`) for package names, including:
@@ -160,7 +160,7 @@ This Python code provides a highly secure and robust mechanism for programmatica
 *   **Educational Platforms**: Offering a secure `pip install` functionality within educational coding environments.
 *   **Agent-Based Systems**: For agents that need to install libraries to complete tasks, ensuring they do so without introducing security vulnerabilities.
 
-### `core\security_manager.py`
+### `core\managers\security_manager.py`
 ### Functionality
 This Python code defines a `SecurityManager` class responsible for monitoring an application's execution environment and terminating it under specific security or operational conditions. It primarily implements two mechanisms: a "kill switch" that watches for the presence of a specific file in designated locations, and a time-based execution limit. Both checks run in separate background threads, ensuring continuous monitoring without blocking the main application flow.
 
@@ -199,26 +199,6 @@ This Python code provides a suite of unit tests for the `AgentManager` class. It
 *   **Regression Testing**: Helps identify if new code changes introduce bugs or break existing functionalities of the `AgentManager`.
 *   **Development Support**: Aids developers in verifying the correctness of the `AgentManager` class during its development and refactoring phases.
 *   **Code Reliability**: Contributes to the overall reliability and robustness of the `AgentManager` component by providing automated checks for its operations.
-
-### `core\test_api_key_manager.py`
-### Functionality
-This Python code defines a unit test suite for a `GlobalAPIKeyManager` class, ensuring its core functionalities related to managing and distributing API keys are working correctly. It tests the initialization, retrieval, rotation, failure handling, and resetting mechanisms of API keys, as well as the singleton pattern implementation of the manager.
-
-### Features
-*   **Singleton Pattern Enforcement**: Verifies that only a single instance of `GlobalAPIKeyManager` can exist throughout the application.
-*   **API Key Initialization**: Tests the ability to initialize the manager with a list of API keys.
-*   **Current Key Retrieval**: Checks if the manager can successfully provide an active API key.
-*   **Key Rotation and Failover**: Assesses the manager's capability to rotate to a different key when the current one is marked as failed, ensuring continued operation.
-*   **Failure Handling**: Tests the behavior when all API keys have failed, expecting an exception.
-*   **Force Reset of Failed Keys**: Verifies a mechanism to clear the list of failed keys, making them available again.
-*   **Daily Reset Mechanism**: Simulates a new day to confirm that failed keys are automatically reset after a certain period (e.g., 24 hours).
-*   **Detailed Status Reporting**: Checks the ability to retrieve comprehensive status information about the keys, including total keys, usage statistics, and the current key's prefix.
-
-### Uses
-*   **API Key Management Systems**: Used to validate the robustness and reliability of an API key management component responsible for distributing keys to various services or requests.
-*   **Load Balancing/Rate Limiting**: Ensures that API keys can be effectively rotated or failed over to distribute load or handle rate limits across multiple keys for external API integrations.
-*   **Fault Tolerance**: Crucial for testing the resilience of applications that rely on external APIs, guaranteeing that if one API key becomes invalid or throttled, another can take its place seamlessly.
-*   **Automated Testing**: Provides a comprehensive set of automated tests to be run during development or CI/CD pipelines to prevent regressions in the API key management logic.
 
 ### `core\prompts\enhance_prompt.py`
 ### Functionality

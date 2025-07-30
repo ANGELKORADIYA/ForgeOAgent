@@ -7,9 +7,11 @@ from typing import Dict, List, Any, Optional
 from google import genai
 import sys
 
-from core.pip_installer import pip_installer
-from core.api_key_manager import GlobalAPIKeyManager
-from core.agent_manager import AgentManager
+from core.managers.pip_install_manager import PIPInstallManager
+from core.managers.api_key_manager import GlobalAPIKeyManager
+from core.managers.agent_manager import AgentManager
+from core.class_analyzer import PyClassAnalyzer
+
 from core.config_prompts import (
     DEFAULT_SYSTEM_INSTRUCTION,
     DEFAULT_OUTPUT_REQUIRED,
@@ -27,6 +29,7 @@ from google.api_core.exceptions import Unauthenticated, ResourceExhausted, Googl
 # Ensure UTF-8 encoding for stdout
 sys.stdout.reconfigure(encoding='utf-8')
 
+MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "tools"))
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
 MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "main_agent")
 AGENT_LOG_DIR = os.path.join(LOG_DIR, "agent")
@@ -75,6 +78,7 @@ class GeminiAPIClient:
     def _get_last_conversation_id(type:str = "agent") -> Optional[str]:
         """Gets the most recent conversation ID from the 'logs' directory."""
         logs_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..", "logs", type))
+        print(logs_dir)
         if not os.path.isdir(logs_dir):
             return None
         
@@ -91,6 +95,11 @@ class GeminiAPIClient:
     
     def _init_log_file(self):
         """Initialize the log file with metadata."""
+        if "main_agent" in self.conversation_id:
+            self.log_file = os.path.join(MAIN_AGENT_LOG_DIR, f"{self.conversation_id}.jsonl")
+        else:
+            self.log_file = os.path.join(AGENT_LOG_DIR, f"{self.conversation_id}.jsonl")
+            
         if not os.path.exists(self.log_file):
             with open(self.log_file, "w", encoding="utf-8") as f:
                 metadata = {
@@ -101,7 +110,7 @@ class GeminiAPIClient:
                 }
                 f.write(json.dumps(metadata) + "\n")
     
-    def _log_interaction(self, prompt: str, response_data: Any, success: bool = True, error: str = None):
+    def _log_interaction(self, prompt: str, response_data: Any, success: bool = True, error: str = None,type:str = "agent"):
         """Log API interactions."""
         log_entry = {
             "type": "interaction",
@@ -380,7 +389,7 @@ class GeminiAPIClient:
             python_code = main_response.get("python", "")
             if python_code.strip() == "":
                 return
-                    
+            mcp_tools_classes = PyClassAnalyzer.get_all_classes(MCP_TOOLS_DIR)
             execution_globals = {
                 'GeminiAPIClient': GeminiAPIClient,
                 'types': types,
@@ -388,8 +397,9 @@ class GeminiAPIClient:
                 'json': json,
                 'os': os,
                 'datetime': datetime,
-                'pip_installer': pip_installer,
+                'PIPInstallManager': PIPInstallManager,
             }
+            execution_globals.update(mcp_tools_classes)
             execution_globals["execution_globals"] = execution_globals
             print("⚡ Executing generated Python code...")
             print("-" * 30)
@@ -436,10 +446,14 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
             conversation_id = f"main_agent_from_{selected_agent['agent_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         else:
             conversation_id = f"main_agent_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-            
+
+        GEMINI_CLASS_ANALYZER =PyClassAnalyzer.analyze_dir(MCP_TOOLS_DIR)
+        MCP_CLASS_ANALYZER=PyClassAnalyzer.analyze_dir(f"{os.path.join(os.path.dirname(__file__))}"'')
+        main_agent_system_intruction = MAIN_AGENT_SYSTEM_INSTRUCTION % {"GEMINI_CLASS_ANALYZER": GEMINI_CLASS_ANALYZER,"MCP_CLASS_ANALYZER": MCP_CLASS_ANALYZER}
+
         main_agent = GeminiAPIClient(
             api_keys=api_keys,
-            system_instruction=MAIN_AGENT_SYSTEM_INSTRUCTION,
+            system_instruction=main_agent_system_intruction,
             output_required=MAIN_AGENT_OUTPUT_REQUIRED,
             output_properties=MAIN_AGENT_OUTPUT_PROPERTIES,
             conversation_id=conversation_id,
@@ -453,7 +467,7 @@ def main(api_keys: List[str], user_request: str = None, reference_agent_path: st
         imports = main_agent_response.get("imports", [])
         if imports:
             print(f"\n🔍 Detected required packages: {imports}")
-            pip_result = pip_installer(imports)
+            pip_result = PIPInstallManager(imports)
             print(f"📦 Package installation result: {pip_result['status']}")
             
             if pip_result['status'] == 'partial_success' or pip_result['failed']:

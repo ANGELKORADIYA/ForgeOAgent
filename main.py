@@ -3,18 +3,18 @@ import sys
 from dotenv import load_dotenv
 from typing import List
 from clients.gemini_client import main, GeminiAPIClient
-from core.agent_manager import AgentManager
-from core.security_manager import SecurityManager
+from core.managers.agent_manager import AgentManager
+from core.managers.security_manager import SecurityManager
 
 load_dotenv()
 
 # only import prompts to activate and have _system_instruction
-from core.prompts.enhance_prompt import ENHANCE_PROMPT_SYSTEM_INSTRUCTION , ENHANCE_PROMPT_USER_INSTRUCTION
-from core.prompts.enhance_text import ENHANCE_TEXT_SYSTEM_INSTRUCTION
-from core.prompts.generate_email import GENERATE_EMAIL_SYSTEM_INSTRUCTION
-from core.prompts.refine_code import REFINE_CODE as REFINE_CODE_SYSTEM_INSTRUCTION 
-from core.prompts.regex import REGEX_SYSTEM_INSTRUCTION 
-from core.prompts.what_word import WHAT_WORD_SYSTEM_INSTRUCTION 
+from mcp.system_prompts.enhance_prompt import ENHANCE_PROMPT_SYSTEM_INSTRUCTION , ENHANCE_PROMPT_USER_INSTRUCTION
+from mcp.system_prompts.enhance_text import ENHANCE_TEXT_SYSTEM_INSTRUCTION
+from mcp.system_prompts.generate_email import GENERATE_EMAIL_SYSTEM_INSTRUCTION
+from mcp.system_prompts.refine_code import REFINE_CODE as REFINE_CODE_SYSTEM_INSTRUCTION 
+from mcp.system_prompts.regex import REGEX_SYSTEM_INSTRUCTION 
+from mcp.system_prompts.what_word import WHAT_WORD_SYSTEM_INSTRUCTION 
 
 
 def run_prompt_improvement(input_text: str, api_keys: List[str], prompt_agent: str,new_content:bool=False):

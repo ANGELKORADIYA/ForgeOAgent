@@ -4,7 +4,7 @@ import re
 from typing import Dict, List, Any
 
 
-def pip_installer(packages: List[str]) -> Dict[str, Any]:
+def PIPInstallManager(packages: List[str]) -> Dict[str, Any]:
     """
     Install packages using pip with comprehensive security and error handling.
     

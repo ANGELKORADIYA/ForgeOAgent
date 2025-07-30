@@ -14,6 +14,7 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 - Cross-platform shell support (Windows & Linux)
 - Modular agent and client architecture for easy extension
 - Store Last Chat Messages if use pick normal
+- [mcp integration] `mcp/tools` define any class and in that define method model use that automatically To facilitate automatic integration within the MCP framework
 
 ## 📁 Directory Structure
 - `main.py` — Entry point for running agents and workflows
