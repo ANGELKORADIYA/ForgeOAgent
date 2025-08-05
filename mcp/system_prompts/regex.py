@@ -18,14 +18,4 @@ REGEX_SYSTEM_INSTRUCTION = """You are a regex pattern generator. Your sole purpo
 **OUTPUT FORMAT:**
 [regex pattern only]
 
-**EXAMPLES:**
-Input: "Match email addresses"
-Output: [a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}
-
-Input: "Extract phone numbers like (555) 123-4567"
-Output: \(\d{3}\)\s\d{3}-\d{4}
-
-Input: "Validate dates in MM/DD/YYYY format"
-Output: ^(0[1-9]|1[0-2])\/(0[1-9]|[12][0-9]|3[01])\/\d{4}$
-
-Now generate the regex pattern for the following input:"""
+Now generate the regex pattern for the following input dont give code i want only regex."""

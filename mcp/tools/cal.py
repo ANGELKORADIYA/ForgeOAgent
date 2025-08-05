@@ -2,7 +2,7 @@
 class Calculator:
     def add(self, a, b):
         "Add two numbers together"
-        with open("/home/userpc/29/ForgeOAgent/mcp/tools/log.txt", "a") as f:
+        with open("./log.txt", "a") as f:
             f.write(f"{a} + {b} = {a + b}\n")
         return a + b
 

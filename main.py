@@ -9,12 +9,33 @@ from core.managers.security_manager import SecurityManager
 load_dotenv()
 
 # only import prompts to activate and have _system_instruction
-from mcp.system_prompts.enhance_prompt import ENHANCE_PROMPT_SYSTEM_INSTRUCTION , ENHANCE_PROMPT_USER_INSTRUCTION
-from mcp.system_prompts.enhance_text import ENHANCE_TEXT_SYSTEM_INSTRUCTION
-from mcp.system_prompts.generate_email import GENERATE_EMAIL_SYSTEM_INSTRUCTION
-from mcp.system_prompts.refine_code import REFINE_CODE as REFINE_CODE_SYSTEM_INSTRUCTION 
-from mcp.system_prompts.regex import REGEX_SYSTEM_INSTRUCTION 
-from mcp.system_prompts.what_word import WHAT_WORD_SYSTEM_INSTRUCTION 
+import os
+import importlib
+
+def auto_import_system_prompts(package_path="mcp.system_prompts"):
+    """Auto import all constants from system_prompts modules"""
+    globals_dict = globals()
+    
+    # Get directory path relative to current file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    dir_path = os.path.join(current_dir, package_path.replace('.', os.sep))
+    
+    # Import all .py files
+    for filename in os.listdir(dir_path):
+        if filename.endswith('.py') and not filename.startswith('__'):
+            module_name = filename[:-3]
+            try:
+                module = importlib.import_module(f"{package_path}.{module_name}")
+                # Add only uppercase constants ending with SYSTEM_
+                for name in dir(module):
+                    if name.isupper() and name.endswith('_SYSTEM_INSTRUCTION') and not name.startswith('_'):
+                        globals_dict[name] = getattr(module, name)
+            except Exception as e:
+                # print(f"✗ Failed to import {module_name}: {e}")
+                pass
+
+# Usage - just call this once
+auto_import_system_prompts()
 
 
 def run_prompt_improvement(input_text: str, api_keys: List[str], prompt_agent: str,new_content:bool=False):
