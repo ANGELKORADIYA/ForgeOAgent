@@ -1,7 +1,7 @@
 requests
 dotenv
 google
-google-genai=1.25.0
+google-genai==1.25.0
 google-api-core
 google-generativeai
 wxPython
