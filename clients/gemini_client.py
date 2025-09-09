@@ -78,7 +78,6 @@ class GeminiAPIClient:
     def _get_last_conversation_id(type:str = "agent") -> Optional[str]:
         """Gets the most recent conversation ID from the 'logs' directory."""
         logs_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..", "logs", type))
-        print(logs_dir)
         if not os.path.isdir(logs_dir):
             return None
         

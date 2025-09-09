@@ -1,7 +1,8 @@
 requests
 dotenv
 google
-google-genai
+google-genai=1.25.0
 google-api-core
 google-generativeai
+wxPython
 # PyInstaller
