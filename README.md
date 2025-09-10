@@ -9,7 +9,7 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 
 ## 🚀 Features
 - Assign shortcuts for instant agent access on any platform
-- Save custom prompts to `core/prompts/` and import in `main.py`
+- Save custom prompts to `mcp/system_prompts/` and import in `main.py`
 - Gemini tasks and results are automatically logged for future reference
 - Cross-platform shell support (Windows & Linux)
 - Modular agent and client architecture for easy extension
@@ -47,13 +47,13 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 5. **Assign a shortcut for quick access**
    - **Linux:**
      1. Go to Settings > Keyboard Shortcuts > Add Shortcut.
-     2. Set the name and script path (e.g., `shell/linux/index.sh`).
+     2. Set the name and script path (e.g., `shell/linux/start.vbs`).
    - **Windows:**
-     1. Right-click `shell/windows/index.vbs` and select "Send to Desktop (create shortcut)".
+     1. Right-click `shell/windows/start.vbs` and select "Send to Desktop (create shortcut)".
      2. On the desktop shortcut, right-click > Properties > set a shortcut key.
 
 ## 💡 Usage
-- Create or modify agents in `core/prompts/`
+- Create or modify agents in `mcp/system_prompts/`
 - Integrate new clients in `clients/`
 - Review logs in `logs/` for agent activity and improvements
 - *_main.* is used for anything you want to do.
@@ -62,9 +62,9 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 You can assign `.sh` (shell) or `.vbs` (VBScript) files to shortcuts for instant agent execution.
 
 **To create your own agent:**
-1. Add your custom prompt to `core/prompts/` (use the naming convention `*_SYSTEM_INSTRUCTION`).
-2. Import your prompt in `main.py`.
-3. Create a shortcut script (e.g., `.sh` or `.vbs`) to call the main agent with your prompt type.
+1. Add your custom prompt to `mcp/system_prompts/` (use the naming convention `*_SYSTEM_INSTRUCTION`).
+(it automatically imported in main.py)
+2. Create a shortcut script (e.g., `.sh` or `.vbs`) to call the main agent with your prompt type.
 
 Now you can run agents with custom instructions instantly by triggering your shortcut.
 

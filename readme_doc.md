@@ -217,3 +217,42 @@ This Python code defines two string constants that represent instructions for an
 *   **Developer Tools and APIs**: As core instructions within a larger application or API that offers prompt optimization as a feature.
 *   **Internal AI Agent Configuration**: To configure a specialized AI agent or chatbot designed for prompt engineering tasks within an organization.
 *   **Educational Resource**: The detailed `ENHANCE_PROMPT_SYSTEM_INSTRUCTION` can also serve as a valuable reference or training material for humans learning prompt engineering best practices.
+
+### `start.py`
+### Functionality
+This Python script implements a sophisticated graphical user interface (GUI) using wxPython for the ForgeOAgent system. It provides a user-friendly way to interact with the Gemini API client, managing both simple prompt processing and complex agent-based operations through a clean, intuitive interface.
+
+### Features
+*   **Dual Processing Modes**:
+    *   **Simple Mode**: For straightforward prompt processing using system instructions
+    *   **Main Mode**: For complex agent-based operations and interactions
+*   **Rich User Interface Components**:
+    *   **Mode Selection**: Radio buttons to switch between Simple and Main modes
+    *   **Prompt Type Selection**: Dropdown menu with dynamic loading of available prompt types
+    *   **Context Input**: Text area for loading additional context from files or clipboard
+    *   **User Input**: Multi-line text area for entering prompts
+    *   **Processing Options**: Configurable settings like "Process as New Content"
+*   **File and Clipboard Integration**:
+    *   Load context from text files
+    *   Get text directly from system clipboard
+    *   Save results to clipboard
+*   **Result Management**:
+    *   Dedicated result dialog with copy-to-clipboard functionality
+    *   Option to save results (in Main mode) for future reference
+*   **Background Processing**:
+    *   Asynchronous prompt processing using threading
+    *   UI remains responsive during processing
+*   **Error Handling**:
+    *   Comprehensive error detection and user feedback
+    *   Graceful handling of API key issues and processing failures
+*   **Status Updates**:
+    *   Status bar for real-time operation feedback
+    *   Clear success/error messaging
+
+### Uses
+*   **Interactive AI Development**: Provides developers with a GUI tool for testing and refining AI prompts
+*   **Content Enhancement**: Enables users to process and enhance text content through various AI-powered transformations
+*   **Agent Development**: Facilitates the creation, testing, and saving of AI agents through a visual interface
+*   **Prompt Engineering**: Offers a practical environment for developing and testing different prompt strategies
+*   **Educational Tool**: Serves as a learning platform for understanding AI prompt processing and agent interactions
+*   **Production Environment**: Can be used as a standalone application for production use of the ForgeOAgent system
