@@ -6,3 +6,6 @@ google-api-core
 google-generativeai
 wxPython
 # PyInstaller
+fastapi
+python-multipart
+uvicorn

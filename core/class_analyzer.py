@@ -4,6 +4,8 @@ import json
 from typing import Dict, List, Any, Union, Optional
 import importlib.util
 
+from core.managers import InstrumentModule
+
 class PyClassAnalyzer:
     @staticmethod
     def _get_annotation_type(annotation: Optional[ast.expr]) -> str:
@@ -15,13 +17,18 @@ class PyClassAnalyzer:
             return "any"
 
     @staticmethod
-    def _analyze_class_def(class_def: ast.ClassDef) -> Dict[str, Union[List[Dict[str, str]], Dict[str, Dict[str, Any]]]]:
-        result: Dict[str, Union[List[Dict[str, str]], Dict[str, Dict[str, Any]]]] = {
+    def _analyze_class_def(class_def: ast.ClassDef) -> Dict[str, Union[str, List[Dict[str, str]], Dict[str, Dict[str, Any]]]]:
+        result: Dict[str, Union[str, List[Dict[str, str]], Dict[str, Dict[str, Any]]]] = {
+            "description": "",
             "variables": [],
             "methods": {}
         }
 
         try:
+            # Get class docstring
+            doc: str = ast.get_docstring(class_def) or ""
+            result["description"] = doc
+
             for node in class_def.body:
                 # ✅ Skip methods starting with underscore
                 if isinstance(node, ast.FunctionDef) and not node.name.startswith("_"):
@@ -31,11 +38,11 @@ class PyClassAnalyzer:
                         param_type = PyClassAnalyzer._get_annotation_type(arg.annotation)
                         params.append({param_name: param_type})
 
-                    doc: str = ast.get_docstring(node) or ""
+                    method_doc: str = ast.get_docstring(node) or ""
                     return_type = PyClassAnalyzer._get_annotation_type(node.returns)
 
                     result["methods"][node.name] = {
-                        "doc": doc,
+                        "doc": method_doc,
                         "param": params,
                         "return_type": return_type
                     }
@@ -71,7 +78,7 @@ class PyClassAnalyzer:
         return class_data
 
     @classmethod
-    def analyze_dir(cls, target_dir: str,is_json:bool = False) -> Dict[str, Any]:
+    def analyze_dir(cls, target_dir: str, is_json: bool = False) -> Dict[str, Any]:
         final_output: Dict[str, Any] = {}
 
         if not os.path.isdir(target_dir):
@@ -123,6 +130,7 @@ class PyClassAnalyzer:
 
                     if hasattr(module, class_name):
                         class_obj = getattr(module, class_name)
+                        InstrumentModule(class_obj)
                         class_map[class_name] = class_obj
                         break  # Found the class, no need to check further files
                 except Exception as e:
@@ -130,3 +138,5 @@ class PyClassAnalyzer:
 
         return class_map
     
+if __name__ == "__main__":
+    print(PyClassAnalyzer().analyze_dir(input("path:")))

@@ -21,9 +21,9 @@ try:
         print_available_agents,
         auto_import_system_prompts,
         GeminiAPIClient,
-        AgentManager
+        AgentManager,
+        create_master_agent
     )
-    from clients.gemini_client import main as gemini_main
     from dotenv import load_dotenv
     
     # Load environment variables
@@ -66,14 +66,6 @@ class PromptProcessorFrame(wx.Frame):
         panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
         
-        # Title
-        title = wx.StaticText(panel, label="Prompt Processor", style=wx.ALIGN_CENTER)
-        title_font = title.GetFont()
-        title_font.PointSize += 4
-        title_font = title_font.Bold()
-        title.SetFont(title_font)
-        main_sizer.Add(title, 0, wx.ALL | wx.EXPAND, 10)
-        
         # Mode selection
         mode_box = wx.StaticBox(panel, label="Processing Mode")
         mode_sizer = wx.StaticBoxSizer(mode_box, wx.HORIZONTAL)
@@ -115,7 +107,7 @@ class PromptProcessorFrame(wx.Frame):
         
         context_sizer.Add(context_btn_sizer, 0, wx.EXPAND)
         
-        self.context_text = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY, size=(-1, 100))
+        self.context_text = wx.TextCtrl(panel, style=wx.TE_MULTILINE, size=(-1, 100))
         context_sizer.Add(self.context_text, 1, wx.ALL | wx.EXPAND, 5)
         
         main_sizer.Add(context_sizer, 0, wx.ALL | wx.EXPAND, 5)
@@ -304,7 +296,7 @@ class PromptProcessorFrame(wx.Frame):
             result = ""
             
             if self.mode_main.GetValue():
-                # Main mode - use gemini_main function
+                # Main mode - use create_master_agent function
                 try:
                     agent_manager = AgentManager()
                     prompt_text_path = None
@@ -315,9 +307,9 @@ class PromptProcessorFrame(wx.Frame):
                         except:
                             prompt_text_path = None
                     
-                    # Capture output from gemini_main
+                    # Capture output from create_master_agent
                     output, _ = self.capture_print_output(
-                        gemini_main,
+                        create_master_agent,
                         self.api_keys,
                         final_text,
                         shell_enabled=True,

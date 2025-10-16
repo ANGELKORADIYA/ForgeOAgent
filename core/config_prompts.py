@@ -1,5 +1,11 @@
 from google import genai
 from google.genai import types
+import os
+
+from core.class_analyzer import PyClassAnalyzer
+
+
+MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "tools"))
 
 MAIN_AGENT_SYSTEM_INSTRUCTION = """You are a Master Agent Creator that breaks down complex user requests into executable Python code.
 
@@ -7,7 +13,7 @@ Your role is to:
 1. Analyze the user's request and understand what needs to be done
 2. Generate executable Python code that accomplishes the task
 3. Use the available tools and libraries to complete the work
-4. Handle errors gracefully and provide clear output
+4. Handle errors gracefully and provide clear output and wrap all generated code with try catch means code must start with try: and ends with exception handling with detailed error print.
 
 AVAILABLE TOOLS IN EXECUTION ENVIRONMENT:
 - types, genai: For Google AI API operations
@@ -15,6 +21,9 @@ AVAILABLE TOOLS IN EXECUTION ENVIRONMENT:
 
 For creating AI agents : %(GEMINI_CLASS_ANALYZER)s
 %(MCP_CLASS_ANALYZER)s
+- GeminiAPIClient: must use this class for task u only have to create plan and sub agents not task related code, creating small agents which work on specific task use search_content for web search and get response but not in formatted and generate_content for structured output.  
+- FileManupulation: For writing files you have to must use this class which have write_file which takes relative path to store and data what you want to store and read_file which takes relative path to read files data.
+- ODOO_REGEX: You must use this class for odoo related code generation . use code_generate_ref and store template how to generate code for odoo than other agent prompt use that and than create.
 - PIPInstallManager: For installing required packages
 IMPORTANT RULES:
 - Generate practical, working Python code
@@ -26,6 +35,10 @@ IMPORTANT RULES:
 - If your code requires additional packages, list them in the "imports" field
 - The system will automatically install required packages before executing your code
 
+YOU MUST CREATE and USE  MemoryManagers function for memory reference like storing structure of class , function and variable name or meta data. and must create plan.txt file and work accoring to plan.txt and also cross agent communication use json files using MemoryManager Class.
+here u can store and use for know about what other agent creating so for reference and not mismatch use this class
+first create a agent which create plan using MemoryManagers with proper variable , function , class store for use by other agents to know structure. now this plan was readed and passed to other agents using GeminiAPIClient in prompt.
+than create mini small agents which work on that plan so add loaded plan into all of them use GeminiAPIClient
 SAFETY CONSTRAINTS:
 - Never delete or modify system-critical files
 - Always validate file paths and operations
@@ -38,7 +51,7 @@ RESPONSE FORMAT - You MUST return a JSON object with these exact keys:
     "explanation": "Brief explanation of your approach and what the code will do",
     "python": "Complete executable Python code that accomplishes the task",
     "imports": ["package1", "package2"] // List of required packages to install via pip (empty array if none needed dont give build-in packages in this list like dont give json , datetime etc),
-    "ids": ["task_1", "task_2"] // Simple task identifiers for progress tracking
+    "ids": ["task_related_name_1", "task_related_name_2"] // Simple task identifiers for progress tracking
 }
 return empty string if no code is generated
 
@@ -49,14 +62,18 @@ Response:
 {
     "explanation": "I'll create a comprehensive text file with practical tips for making viral YouTube shorts, covering content strategy, editing techniques, and optimization.",
     "python": "
+plan_name = "viral_youtube_shorts"
+internal_share = GeminiAPIClient(conversation_id='internal_share',system_instruction='Using MemoryManager create relevant names variables , class , methods and store ')
+internal_share_response = internal_share.generate_content('create viral_youtube_shorts plan using MemoryManager')
+exec(internal_share_response['python'],execution_globals)
 create_directory = GeminiAPIClient(system_instruction='Create a directory for YouTube shorts tips',conversation_id='create_directory')
-create_directory_response = create_directory.call_api('Create a directory named youtube_shorts_tips and save path is response variable')
+create_directory_response = create_directory.generate_content('Create a directory named youtube_shorts_tips and save path is response variable<context>MemoryManager().read_plan(plan_name)</context>')
 execution_globals["response"] = ""
 exec(create_directory_response['python'],execution_globals)
 print(create_directory_response['response'])
 write_content_save = GeminiAPIClient(conversation_id='write_content_save')
-contents = write_content_save.call_api_search(f'Write content with tips for making viral YouTube shorts',system_instruction='Create a paragraph with tips for making viral YouTube shorts') # contents is the content to be written not dict
-write_content_save_response = write_content.call_api(f'{contents} and save in given path{execution_globals["response"]}')
+contents = write_content_save.search_content(f'Write content with tips for making viral YouTube shorts',system_instruction='Create a paragraph with tips for making viral YouTube shorts') # contents is the content to be written not dict
+write_content_save_response = write_content.generate_content(f'{contents} and save in given path{execution_globals["response"]}')
 exec(write_content_save_response['python'],execution_globals)
 print(write_content_save_response['response'])
     "ids": ["create_directory", "write_content_save]
@@ -120,11 +137,6 @@ DEFAULT_OUTPUT_PROPERTIES = {
     "python": types.Schema(
         type=genai.types.Type.STRING, 
         description="The Python code generated to accomplish the task"
-    ),
-    "imports": types.Schema(
-        type=genai.types.Type.ARRAY,
-        items=types.Schema(type=genai.types.Type.STRING),
-        description="List of Python imports used in the generated code like ['numpy', 'pandas']"
     )
 }
 
@@ -144,21 +156,3 @@ Instructions:
 - Do NOT mention that you searched Google; just provide the answer.
 - If you cannot find an answer, reply with an empty string.
 """
-
-PROMPT_ENHANCER_SYSTEM_INSTRUCTION = """You are a Prompt Enhancement Agent. Your role is to take user requests and enhance them to be more detailed, specific, and actionable for a coding AI agent.
-
-Key responsibilities:
-1. Analyze the user's request and identify what they want to achieve
-2. Add technical details, best practices, and implementation considerations
-3. Suggest error handling, optimization, and edge cases to consider
-4. Make the prompt more specific and actionable
-5. Maintain the user's original intent while making it more comprehensive
-
-Always provide enhanced prompts that will help the main agent create better, more robust solutions."""
-
-PROMPT_ENHANCER_OUTPUT_REQUIRED = ["enhanced_prompt", "analysis", "improvements"]
-PROMPT_ENHANCER_OUTPUT_PROPERTIES = {
-    "enhanced_prompt": types.Schema(type=types.Type.STRING, description="The enhanced and improved version of the user's request"),
-    "analysis": types.Schema(type=types.Type.STRING, description="Analysis of what the user wants to achieve"),
-    "improvements": types.Schema(type=types.Type.ARRAY, items=types.Schema(type=types.Type.STRING), description="List of improvements made to the original prompt")
-}

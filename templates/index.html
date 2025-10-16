@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Processor - AI Prompt Processing Tool | Simple & Main Mode</title>
+    <meta name="author" content="Angel Koradiya">
+    <meta name="description" content="Prompt Processor - AI Prompt Processing Tool | Simple & Main Mode">
+    <meta name="keywords" content="prompt processor, AI prompts, prompt optimization, prompt engineering, AI tools, LLM prompts">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://forgeoagent.vercel.app/">
+    <meta property="og:title" content="Prompt Processor - AI Prompt Processing Tool">
+    <meta property="og:description" content="Process and optimize your AI prompts with our advanced Prompt Processor tool.">
+    <meta property="og:image" content="https://forgeoagent.vercel.app/og-image.jpg">
+    
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Prompt Processor - AI Prompt Processing Tool">
+    <meta property="twitter:description" content="Process and optimize your AI prompts with our advanced Prompt Processor tool.">
+    <meta property="twitter:image" content="https://forgeoagent.vercel.app/twitter-image.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://forgeoagent.vercel.app/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/logo.png">
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Prompt Processor</h1>
+        <p class="subtitle">Process prompts using Simple or Main mode</p>
+        
+        <form id="promptForm">
+            <div class="section">
+                <div class="section-title">API Password</div>
+                <input type="password" id="apiPassword" name="api_password" placeholder="Enter API password..." required>
+            </div>
+            <div class="section">
+                <div class="section-title">Processing Mode</div>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="mode" value="simple" checked>
+                        Simple Mode
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="mode" value="main">
+                        Main Mode
+                    </label>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Prompt Type</div>
+                <div class="button-group">
+                    <select id="promptType" name="prompt_type" required>
+                        <option value="">Loading...</option>
+                    </select>
+                    <button type="button" class="btn-secondary btn-small" onclick="loadPromptTypes()">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Context / Selected Text (Optional)</div>
+                <textarea id="context" name="context" placeholder="Enter context or paste selected text here..."></textarea>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Your Prompt</div>
+                <textarea id="promptText" name="prompt_text" required placeholder="Enter your prompt here..."></textarea>
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Processing Options</div>
+                <label class="checkbox-label">
+                    <input type="checkbox" name="new_content" checked>
+                    Process as New Content
+                </label>
+            </div>
+            
+            <button type="submit" class="btn-primary">
+                🚀 Process Prompt
+            </button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px; color: #666;">Processing your prompt...</p>
+        </div>
+        
+        <div class="status" id="status"></div>
+    </div>
+
+    <script src="static/script.js"></script>
+</body>
+</html>
