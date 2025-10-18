@@ -128,11 +128,11 @@ class PyClassAnalyzer:
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
 
-                    if hasattr(module, class_name):
-                        class_obj = getattr(module, class_name)
-                        InstrumentModule(class_obj)
-                        class_map[class_name] = class_obj
-                        break  # Found the class, no need to check further files
+                    # if hasattr(module, class_name):
+                    #     class_obj = getattr(module, class_name)
+                    #     InstrumentModule(class_obj)
+                    #     class_map[class_name] = class_obj
+                    #     break  # Found the class, no need to check further files
                 except Exception as e:
                     print(f"[!] Failed to load {class_name} from {filename}: {e}")
 

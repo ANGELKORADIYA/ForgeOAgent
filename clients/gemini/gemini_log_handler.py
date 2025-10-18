@@ -35,7 +35,7 @@ class GeminiLogHandler:
     
     def _log_interaction(self, prompt: str, response_data: Any, success: bool = True, error: str = None,type:str = "agent"):
         """Log API interactions."""
-        self._init_log_file(type)
+        # self._init_log_file(type)
         
         log_entry = {
             "type": "interaction",
@@ -59,5 +59,5 @@ class GeminiLogHandler:
         if error:
             log_entry["error"] = error
         
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        # with open(self.log_file, "a", encoding="utf-8") as f:
+        #     f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
