@@ -8,7 +8,7 @@ import importlib
 import sys
 import os
 
-os.makedirs(f"{os.path.dirname(__file__)}/../../logs/mcp_tools",exist_ok=True)
+# os.makedirs(f"{os.path.dirname(__file__)}/../../logs/mcp_tools",exist_ok=True)
 DEFAULT_LOG_NAME = f"{os.path.dirname(__file__)}/../../logs/mcp_tools/{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
 
 def _repo_logs_dir():

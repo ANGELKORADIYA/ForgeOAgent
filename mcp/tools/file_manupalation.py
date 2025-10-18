@@ -5,7 +5,7 @@ class FileManupulation:
     
     def __init__(self):
         self.base_dir =  "/home/userpc/29/ForgeOAgent/logs/base_dir"
-        os.makedirs(self.base_dir, exist_ok=True)
+        # os.makedirs(self.base_dir, exist_ok=True)
 
     def write_file(self,relative_path: str, data: str) -> str:
         """
@@ -27,7 +27,7 @@ class FileManupulation:
             full_path = os.path.join(self.base_dir, relative_path)
             
             # Ensure directory exists
-            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            # os.makedirs(os.path.dirname(full_path), exist_ok=True)
             
             # Write data to file
             with open(full_path, 'w', encoding='utf-8') as f:

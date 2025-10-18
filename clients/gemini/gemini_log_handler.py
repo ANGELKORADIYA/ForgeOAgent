@@ -8,9 +8,9 @@ MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
 MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "main_agent")
 AGENT_LOG_DIR = os.path.join(LOG_DIR, "agent")
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+# os.makedirs(LOG_DIR, exist_ok=True)
+# os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
+# os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
 class GeminiLogHandler:
     def _init_log_file(self,type:str = "agent"):

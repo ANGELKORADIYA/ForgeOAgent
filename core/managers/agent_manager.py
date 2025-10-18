@@ -8,7 +8,7 @@ class AgentManager:
     
     def __init__(self, agents_dir: str = f"{os.path.join(os.path.dirname(__file__))}/../../mcp/main_agent_context_previous_conversation"):
         self.agents_dir = agents_dir
-        os.makedirs(agents_dir, exist_ok=True)
+        # os.makedirs(agents_dir, exist_ok=True)
     
     def save_agent(self, agent_name: str, conversation_id: str, task_ids: List[str] = None) -> bool:
         """Save an agent's conversation history for future reference (only last main agent interaction)."""
