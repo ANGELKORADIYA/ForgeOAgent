@@ -429,3 +429,52 @@ button {
         width: 100%;
     }
 }
+/* Authentication Input Sections */
+.auth-input-section {
+    margin-top: 15px;
+    padding: 15px;
+    background: white;
+    border-radius: 6px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+}
+
+.auth-input-section input {
+    margin-bottom: 8px;
+}
+
+.input-hint {
+    display: block;
+    color: #666;
+    font-size: 12px;
+    margin-top: 5px;
+    padding-left: 4px;
+}
+
+/* Animation for section transitions */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.auth-input-section {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Radio label enhancement for auth method */
+.radio-label input[type="radio"]:checked + span {
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* Optional: Add visual feedback for focused inputs */
+.auth-input-section input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}

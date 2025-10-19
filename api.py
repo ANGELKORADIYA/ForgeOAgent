@@ -157,7 +157,7 @@ async def verify_api_password(request: Request, call_next):
     """Middleware to verify password for all requests"""
     # Get password from header
     password = request.headers.get("X-API-Password")
-    if request.url.path in ["/exit","/process-form","/api/prompt-types","/api/agents","/","/health","/api/system-instructions","/favicon.ico","/static/style.css","/static/script.js","/static/logo.png"]:
+    if request.url.path in ["/exit","/process-form","/api/prompt-types","/api/agents","/","/health","/api/system-instructions","/favicon.ico","/static/style.css","/static/script.js","/static/logo.png","/api/process-with-key"]:
         response = await call_next(request)
         return response
     # Read configured API password from environment
@@ -183,11 +183,6 @@ async def verify_api_password(request: Request, call_next):
 # Initialize templates (optional, for serving HTML form)
 templates = Jinja2Templates(directory="templates")
 
-# Global variables
-api_keys = []
-gemini_keys = os.getenv("GEMINI_API_KEYS")
-if gemini_keys:
-    api_keys = [key.strip() for key in gemini_keys.split(",") if key.strip()]
 
 # Auto-import system prompts on startup
 try:
@@ -203,6 +198,7 @@ class PromptRequest(BaseModel):
     context: Optional[str] = None
     mode: str = "simple"  # simple or main
     new_content: bool = True
+    api_key: Optional[str] = None
 
 
 class SaveAgentRequest(BaseModel):
@@ -266,33 +262,54 @@ async def get_prompt_types(mode: str = "simple"):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to load prompt types: {str(e)}")
 
-
-@app.post("/api/process", response_model=ProcessResponse)
-async def process_prompt(request: PromptRequest):
-    """Process a prompt using simple or main mode"""
+async def process_prompt_common(
+    prompt_text: str,
+    mode: str,
+    prompt_type: str,
+    context: Optional[str],
+    new_content: bool,
+    api_keys: List[str]
+) -> str:
+    """
+    Common prompt processing logic used by both endpoints
+    
+    Args:
+        prompt_text: The prompt text to process
+        mode: Processing mode ('simple' or 'main')
+        prompt_type: Type of prompt to use
+        context: Optional context to include
+        new_content: Whether to process as new content
+        api_keys: List of API keys to use
+    
+    Returns:
+        Processed result string
+    
+    Raises:
+        HTTPException: If processing fails
+    """
     if not api_keys:
         raise HTTPException(status_code=500, detail="No API keys configured")
     
-    if not request.prompt_text.strip():
+    if not prompt_text.strip():
         raise HTTPException(status_code=400, detail="Prompt text is required")
     
     try:
         # Prepare final text with context if provided
-        final_text = request.prompt_text
-        if request.context:
-            final_text = f"{request.prompt_text}\n<context>{request.context}</context>"
+        final_text = prompt_text
+        if context:
+            final_text = f"{prompt_text}\n<context>{context}</context>"
         
         result = ""
         
-        if request.mode == "main":
+        if mode == "main":
             # Main mode processing
             agent_manager = AgentManager()
             prompt_text_path = None
             
-            if request.prompt_type and request.prompt_type != "None":
+            if prompt_type and prompt_type != "None":
                 try:
-                    prompt_text_path = agent_manager.get_agent_path(request.prompt_type)
-                except:
+                    prompt_text_path = agent_manager.get_agent_path(prompt_type)
+                except Exception:
                     prompt_text_path = None
             
             output, _ = capture_print_output(
@@ -300,9 +317,9 @@ async def process_prompt(request: PromptRequest):
                 api_keys,
                 final_text,
                 shell_enabled=True,
-                selected_agent={"agent_name": request.prompt_type} if request.prompt_type != "None" else None,
+                selected_agent={"agent_name": prompt_type} if prompt_type != "None" else None,
                 reference_agent_path=prompt_text_path,
-                new_content=request.new_content
+                new_content=new_content
             )
             result = output.strip()
         else:
@@ -311,10 +328,70 @@ async def process_prompt(request: PromptRequest):
                 run_prompt_improvement,
                 final_text,
                 api_keys,
-                request.prompt_type,
-                request.new_content
+                prompt_type,
+                new_content
             )
             result = output.strip()
+        
+        return result
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
+
+
+@app.post("/api/process-with-key", response_model=ProcessResponse)
+async def process_prompt_with_key(request: PromptRequest):
+    """
+    Process a prompt using API key authentication
+    No password middleware check applied to this endpoint
+    """
+    if not request.api_key:
+        raise HTTPException(status_code=400, detail="API key is required")
+    
+    # Parse API keys - can be comma-separated
+    api_keys = (
+        [request.api_key] 
+        if "," not in request.api_key 
+        else [key.strip() for key in request.api_key.split(",") if key.strip()]
+    )
+    
+    try:
+        result = await process_prompt_common(
+            prompt_text=request.prompt_text,
+            mode=request.mode,
+            prompt_type=request.prompt_type,
+            context=request.context,
+            new_content=request.new_content,
+            api_keys=api_keys
+        )
+        
+        return ProcessResponse(success=True, result=result)
+    
+    except Exception as e:
+        return ProcessResponse(success=False, error=str(e))
+
+
+@app.post("/api/process", response_model=ProcessResponse)
+async def process_prompt(request: PromptRequest):
+    """
+    Process a prompt using password authentication (via middleware)
+    Uses API keys from environment variables
+    """
+    # Get API keys from environment
+    api_keys = []
+    gemini_keys = os.getenv("GEMINI_API_KEYS")
+    if gemini_keys:
+        api_keys = [key.strip() for key in gemini_keys.split(",") if key.strip()]
+    
+    try:
+        result = await process_prompt_common(
+            prompt_text=request.prompt_text,
+            mode=request.mode,
+            prompt_type=request.prompt_type,
+            context=request.context,
+            new_content=request.new_content,
+            api_keys=api_keys
+        )
         
         return ProcessResponse(success=True, result=result)
     
@@ -386,82 +463,11 @@ async def list_system_instructions():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# Form submission endpoint (alternative to API)
-@app.post("/process-form", response_class=HTMLResponse)
-async def process_form(
-    request: Request,
-    mode: str = Form(...),
-    prompt_type: str = Form(...),
-    prompt_text: str = Form(...),
-    context: str = Form(""),
-    new_content: bool = Form(True)
-):
-    """Process form submission and return result page"""
-    try:
-        if not api_keys:
-            return templates.TemplateResponse("error.html", {
-                "request": request,
-                "error": "No API keys configured"
-            })
-        
-        # Prepare final text
-        final_text = prompt_text
-        if context:
-            final_text = f"{prompt_text}\n<context>{context}</context>"
-        
-        result = ""
-        
-        if mode == "main":
-            agent_manager = AgentManager()
-            prompt_text_path = None
-            
-            if prompt_type and prompt_type != "None":
-                try:
-                    prompt_text_path = agent_manager.get_agent_path(prompt_type)
-                except:
-                    pass
-            
-            output, _ = capture_print_output(
-                create_master_agent,
-                api_keys,
-                final_text,
-                shell_enabled=True,
-                selected_agent={"agent_name": prompt_type} if prompt_type != "None" else None,
-                reference_agent_path=prompt_text_path,
-                new_content=new_content
-            )
-            result = output.strip()
-        else:
-            output, _ = capture_print_output(
-                run_prompt_improvement,
-                final_text,
-                api_keys,
-                prompt_type,
-                new_content
-            )
-            result = output.strip()
-        
-        return templates.TemplateResponse("result.html", {
-            "request": request,
-            "result": result,
-            "prompt_type": prompt_type,
-            "mode": mode
-        })
-    
-    except Exception as e:
-        return templates.TemplateResponse("error.html", {
-            "request": request,
-            "error": str(e)
-        })
-
-
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "api_keys_configured": len(api_keys) > 0
     }
 
 
