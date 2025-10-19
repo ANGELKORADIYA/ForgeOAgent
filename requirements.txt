@@ -9,3 +9,4 @@ wxPython
 fastapi
 python-multipart
 uvicorn
+jinja2
