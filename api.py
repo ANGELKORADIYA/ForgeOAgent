@@ -157,7 +157,24 @@ async def verify_api_password(request: Request, call_next):
     """Middleware to verify password for all requests"""
     # Get password from header
     password = request.headers.get("X-API-Password")
-    if request.url.path in ["/exit","/process-form","/api/prompt-types","/api/agents","/","/health","/api/system-instructions","/favicon.ico","/static/style.css","/static/script.js","/static/logo.png","/api/process-with-key"]:
+    
+    # Handle main mode authentication
+    if request.url.path == "/api/process-with-key":
+        # Get request body
+        try:
+            body = await request.json()
+            if body.get("mode") != "main":
+                # For main mode, require password even with API key
+                response = await call_next(request)
+                return response
+        except:
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"detail": "Invalid request body"}
+            )
+            
+    # Allow these paths without password
+    if request.url.path in ["/exit","/process-form","/api/prompt-types","/api/agents","/","/health","/api/system-instructions","/favicon.ico","/static/style.css","/static/script.js","/static/logo.png"]:
         response = await call_next(request)
         return response
     # Read configured API password from environment

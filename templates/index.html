@@ -3,9 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="aGp62jBifynoYozqe-t1xZ1JJjio8o" />
     <title>Prompt Processor - AI Prompt Processing Tool | Simple & Main Mode</title>
     <meta name="author" content="Angel Koradiya">
     <meta name="description" content="Prompt Processor - AI Prompt Processing Tool | Simple & Main Mode">
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ELFGNEFZ6Y"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-ELFGNEFZ6Y');
+    </script>
     <meta name="keywords" content="prompt processor, AI prompts, prompt optimization, prompt engineering, AI tools, LLM prompts">
     <meta name="robots" content="index, follow">
 
@@ -60,11 +70,11 @@
                 <div class="section-title">Processing Mode</div>
                 <div class="radio-group">
                     <label class="radio-label">
-                        <input type="radio" name="mode" value="simple" checked>
+                        <input type="radio" name="mode" value="simple" checked onchange="toggleAuthMethod()">
                         Simple Mode
                     </label>
                     <label class="radio-label">
-                        <input type="radio" name="mode" value="main">
+                        <input type="radio" name="mode" value="main" onchange="toggleAuthMethod()">
                         Main Mode
                     </label>
                 </div>
