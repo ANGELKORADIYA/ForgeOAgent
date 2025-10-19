@@ -34,8 +34,27 @@
         
         <form id="promptForm">
             <div class="section">
-                <div class="section-title">API Password</div>
-                <input type="password" id="apiPassword" name="api_password" placeholder="Enter API password..." required>
+                <div class="section-title">Authentication Method</div>
+                <div class="radio-group">
+                    <label class="radio-label">
+                        <input type="radio" name="auth_method" value="api_key" checked onchange="toggleAuthMethod()">
+                        🔑 API Key
+                    </label>
+                    <label class="radio-label">
+                        <input type="radio" name="auth_method" value="password" onchange="toggleAuthMethod()">
+                        🔒 Password
+                    </label>
+                </div>
+                
+                <div id="apiKeySection" class="auth-input-section">
+                    <input type="text" id="apiKey" name="api_key" placeholder="Enter your API key..." required>
+                    <small class="input-hint">Use your dedicated API key</small>
+                </div>
+                
+                <div id="passwordSection" class="auth-input-section" style="display: none;">
+                    <input type="password" id="apiPassword" name="api_password" placeholder="Enter your API password...">
+                    <small class="input-hint">Alternative authentication method</small>
+                </div>
             </div>
             <div class="section">
                 <div class="section-title">Processing Mode</div>

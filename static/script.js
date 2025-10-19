@@ -14,6 +14,9 @@ window.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Initialize auth method
+    toggleAuthMethod();
+    
     // Add form submit event listener
     document.getElementById('promptForm').addEventListener('submit', handleFormSubmit);
 });
@@ -63,6 +66,7 @@ function handleFormSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
+    const authMethod = formData.get('auth_method');
     const data = {
         mode: formData.get('mode'),
         prompt_type: formData.get('prompt_type'),
@@ -71,20 +75,34 @@ function handleFormSubmit(e) {
         new_content: formData.get('new_content') === 'on'
     };
     
-    const apiPassword = formData.get('api_password');
+    // Determine authentication credentials based on selected method
+    const apiKey = authMethod === 'api_key' ? formData.get('api_key') : null;
+    const apiPassword = authMethod === 'password' ? formData.get('api_password') : null;
     
     // Show loading state
     document.getElementById('loading').classList.add('show');
     document.querySelector('.btn-primary').disabled = true;
     hideStatus();
+
+    // Determine endpoint based on authentication method
+    const endpoint = apiKey ? '/api/process-with-key' : '/api/process';
+    
+    // Prepare headers
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+    
+    if (apiPassword) {
+        headers['X-API-PASSWORD'] = apiPassword;
+    }
+    if (apiKey) {
+        data['api_key'] = apiKey;
+    }
     
     // Make API request
-    fetch('/api/process', {
+    fetch(endpoint, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-API-PASSWORD': apiPassword
-        },
+        headers: headers,
         body: JSON.stringify(data)
     })
     .then(function(response) { 
@@ -94,7 +112,7 @@ function handleFormSubmit(e) {
         if (result.success && result.result) {
             showResult(result.result, data.prompt_type, data.mode);
         } else {
-            showStatus('Error: ' + (result.detail || 'Unknown error'), 'error');
+            showStatus('Error: ' + (result.detail || result.error || 'Unknown error'), 'error');
         }
     })
     .catch(function(error) {
@@ -278,7 +296,7 @@ function showStatus(message, type) {
     status.className = 'status show ' + (type || 'info');
     setTimeout(function() { 
         hideStatus(); 
-    }, 5000);
+    }, 50000);
 }
 
 /**
@@ -408,5 +426,30 @@ function closeInlineResult() {
     const resultDiv = document.getElementById('inlineResult');
     if (resultDiv) {
         resultDiv.remove();
+    }
+}
+
+/**
+ * Toggle between authentication methods
+ */
+function toggleAuthMethod() {
+    const authMethod = document.querySelector('input[name="auth_method"]:checked').value;
+    const passwordSection = document.getElementById('passwordSection');
+    const apiKeySection = document.getElementById('apiKeySection');
+    const passwordInput = document.getElementById('apiPassword');
+    const apiKeyInput = document.getElementById('apiKey');
+    
+    if (authMethod === 'api_key') {
+        apiKeySection.style.display = 'block';
+        passwordSection.style.display = 'none';
+        apiKeyInput.required = true;
+        passwordInput.required = false;
+        passwordInput.value = ''; // Clear password when switching
+    } else {
+        passwordSection.style.display = 'block';
+        apiKeySection.style.display = 'none';
+        passwordInput.required = true;
+        apiKeyInput.required = false;
+        apiKeyInput.value = ''; // Clear API key when switching
     }
 }
