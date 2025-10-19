@@ -77,7 +77,7 @@ function handleFormSubmit(e) {
     
     // Determine authentication credentials based on selected method
     const apiKey = authMethod === 'api_key' ? formData.get('api_key') : null;
-    const apiPassword = authMethod === 'password' ? formData.get('api_password') : null;
+    const apiPassword = authMethod === 'password' || formData.get('mode') === 'main'? formData.get('api_password') : null;
     
     // Show loading state
     document.getElementById('loading').classList.add('show');
@@ -433,7 +433,14 @@ function closeInlineResult() {
  * Toggle between authentication methods
  */
 function toggleAuthMethod() {
-    const authMethod = document.querySelector('input[name="auth_method"]:checked').value;
+    const authMethodRadio = document.querySelector('input[name="auth_method"]:checked');
+    const modeRadio = document.querySelector('input[name="mode"]:checked');
+    
+    if (!authMethodRadio || !modeRadio) return;
+
+    const authMethod = authMethodRadio.value;
+    const mode = modeRadio.value;
+
     const passwordSection = document.getElementById('passwordSection');
     const apiKeySection = document.getElementById('apiKeySection');
     const passwordInput = document.getElementById('apiPassword');
@@ -441,10 +448,16 @@ function toggleAuthMethod() {
     
     if (authMethod === 'api_key') {
         apiKeySection.style.display = 'block';
-        passwordSection.style.display = 'none';
         apiKeyInput.required = true;
-        passwordInput.required = false;
-        passwordInput.value = ''; // Clear password when switching
+        if (mode === 'main') {
+            passwordSection.style.display = 'block';
+            passwordInput.required = true;
+        }
+        else{
+            passwordSection.style.display = 'none';
+            passwordInput.required = false;
+            passwordInput.value = ''; // Clear password when switching
+        }
     } else {
         passwordSection.style.display = 'block';
         apiKeySection.style.display = 'none';
