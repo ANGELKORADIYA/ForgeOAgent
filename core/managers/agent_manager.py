@@ -17,7 +17,7 @@ class AgentManager:
             os.makedirs(agent_folder, exist_ok=True)
             
             # Read the log file and get only the last main agent interaction
-            log_file = f"{self.agents_dir}/../../logs/main_agent/{conversation_id}.jsonl"
+            log_file = f"{self.agents_dir}/../../logs/executor/{conversation_id}.jsonl"
             if os.path.exists(log_file):
                 last_interaction = None
                 
@@ -91,7 +91,7 @@ class AgentManager:
             print(f"❌ Failed to save agent '{agent_name}': {str(e)}")
             return False
     
-    def list_agents(self) -> List[Dict[str, Any]]:
+    def list_executors(self) -> List[Dict[str, Any]]:
         """List all available saved agents."""
         agents = []
         try:
@@ -117,7 +117,7 @@ class AgentManager:
 
     def select_agent_or_create_new(self) -> tuple:
         """Interactive agent selection or creation."""
-        agents = self.list_agents()
+        agents = self.list_executors()
         
         print("\n🤖 Available Agents:")
         print("=" * 50)

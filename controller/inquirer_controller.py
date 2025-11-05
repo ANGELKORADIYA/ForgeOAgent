@@ -4,13 +4,13 @@ from typing import List
 
 from clients.gemini_engine import GeminiAPIClient
 
-def print_available_system_instructions():
+def print_available_inquirers():
     """Print all available *_SYSTEM_INSTRUCTION variables from the current context."""
     for var_name in globals():
         if var_name.endswith("_SYSTEM_INSTRUCTION"):
             print(f"{var_name}")
 
-def auto_import_system_prompts(package_path="mcp.system_prompts"):
+def auto_import_inquirers(package_path="mcp.system_prompts"):
     """Auto import all constants from system_prompts modules"""
     globals_dict = globals()
     
@@ -32,9 +32,8 @@ def auto_import_system_prompts(package_path="mcp.system_prompts"):
                 # print(f"✗ Failed to import {module_name}: {e}")
                 pass
 
-def run_prompt_improvement(input_text: str, api_keys: List[str], prompt_agent: str,new_content:bool=False):
+def inquirer_using_selected_system_instructions(input_text: str, api_keys: List[str], prompt_agent: str,new_content:bool=False):
     """Run Gemini API prompt improvement using the given system instruction."""
-    main_agent = GeminiAPIClient(api_keys=api_keys,new_content=new_content)
     prompt_agent = prompt_agent.strip().upper()
     if not prompt_agent.endswith("_SYSTEM_INSTRUCTION"):
         prompt_agent += "_SYSTEM_INSTRUCTION"
@@ -46,5 +45,6 @@ def run_prompt_improvement(input_text: str, api_keys: List[str], prompt_agent: s
     prompt_agent = prompt_agent.replace("_SYSTEM_INSTRUCTION", "")
     user_enhance = globals().get(f"{prompt_agent}_USER_INSTRUCTION", "```user_input")
     query = f"{user_enhance} {input_text}```"
-    response = main_agent.search_content(query, system_instruction=system_prompt)
+    main_agent = GeminiAPIClient(api_keys=api_keys,new_content=new_content,system_instruction=system_prompt)
+    response = main_agent.search_content(query)
     print(response)

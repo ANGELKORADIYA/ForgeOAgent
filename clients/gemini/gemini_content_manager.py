@@ -8,9 +8,9 @@ from google.genai import types
 
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
 
-class GeminiContents:
+class GeminiContentManager:
     @staticmethod
-    def _get_last_conversation_id(type:str = "agent") -> Optional[str]:
+    def _get_last_conversation_id(type:str = "inquirer") -> Optional[str]:
         """Gets the most recent conversation ID from the 'logs' directory."""
         logs_dir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),"..","..", "logs", type))
         if not os.path.isdir(logs_dir):
@@ -53,7 +53,7 @@ class GeminiContents:
                             continue
         return contents
 
-    def _get_previous_conversation_contents(self,type:str = "agent") -> list:
+    def _get_previous_conversation_contents(self,type:str = "inquirer") -> list:
         """Read previous conversation from the current log file and return as Gemini contents."""
         contents = []
         last_id = self._get_last_conversation_id(type)

@@ -14,8 +14,8 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 
 - **Cross-platform shell support:** Works on Windows & Linux.
 - **Flexible agent modes:**  
-	- *Simple Mode*: Use system prompts for quick tasks.  
-	- *Main Mode*: Advanced workflows, agent management, and context-aware automation.
+	- *Inquirer Mode*: Use system prompts for quick tasks.  
+	- *Executor Mode*: Advanced workflows, agent management, and context-aware automation.
 - **Customizable prompts:** Easily add your own system instructions for new agent behaviors in `mcp/system_prompts/`
 - **Persistent chat history:** Optionally load recent conversations for better context and accuracy.
 - **Automatic tool integration:** Place Python classes in `mcp/tools` to auto-expose new agent capabilities.
@@ -74,9 +74,9 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 ## 💡 Usage Examples
 
 - **Quick prompt improvement:**  
-	Use Simple Mode to enhance text, code, or emails with a single command.
+	Use Inquirer Mode to enhance text, code, or emails with a single command.
 - **Context-aware automation:**  
-	Use Main Mode to leverage previous conversations and agent context for more complex tasks.
+	Use Executor Mode to leverage previous conversations and agent context for more complex tasks.
 
 
 ---

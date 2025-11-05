@@ -19,8 +19,8 @@ from core.config_prompts import (
 
 MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "tools"))
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
-MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "main_agent")
-AGENT_LOG_DIR = os.path.join(LOG_DIR, "agent")
+MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
+AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
 os.makedirs(AGENT_LOG_DIR, exist_ok=True)
@@ -29,21 +29,20 @@ os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 from clients.gemini_engine import GeminiAPIClient
 from core.managers.agent_manager import AgentManager
 
-def print_available_agents():
+def print_available_executors():
     """Print all saved agents from AgentManager."""
     agent_manager = AgentManager()
-    agents = agent_manager.list_agents()  # Assumes this returns a list of agent dicts
+    agents = agent_manager.list_executors()  # Assumes this returns a list of agent dicts
     if not agents:
         print("No agents found.")
-        return
     for idx, agent in enumerate(agents):
         print(f"{agent.get('agent_name', 'Unnamed')}")
     print("None")
 
 
-def save_last_agent(agent_name: str = None):
+def save_last_executor(agent_name: str = None):
     try:
-        conversation_id = GeminiAPIClient._get_last_conversation_id('main_agent')
+        conversation_id = GeminiAPIClient._get_last_conversation_id('executor')
         if not agent_name:
             agent_name = conversation_id
     except:
@@ -54,7 +53,7 @@ def save_last_agent(agent_name: str = None):
                 )
 
 
-def create_master_agent(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None , shell_enabled:bool = False,new_content:bool = False) -> Dict[str, Any]:
+def create_master_executor(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None , shell_enabled:bool = False,new_content:bool = False) -> Dict[str, Any]:
     """Create the main agent responsible for generating Python code with interactive agent selection."""
     print("🚀 AI Agent System")
     print("=" * 60)
@@ -81,9 +80,9 @@ def create_master_agent(api_keys: List[str], user_request: str = None, reference
     try:
         # Create conversation ID based on whether using existing agent or new
         if selected_agent:
-            conversation_id = f"main_agent_from_{selected_agent['agent_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            conversation_id = f"executor_from_{selected_agent['agent_name']}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         else:
-            conversation_id = f"main_agent_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            conversation_id = f"executor_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
         GEMINI_CLASS_ANALYZER =PyClassAnalyzer.analyze_dir(f"{os.path.join(os.path.dirname(__file__))}/../clients"'')
         MCP_CLASS_ANALYZER=PyClassAnalyzer.analyze_dir(MCP_TOOLS_DIR)

@@ -224,10 +224,10 @@ This Python script implements a sophisticated graphical user interface (GUI) usi
 
 ### Features
 *   **Dual Processing Modes**:
-    *   **Simple Mode**: For straightforward prompt processing using system instructions
-    *   **Main Mode**: For complex agent-based operations and interactions
+    *   **Inquirer Mode**: For straightforward prompt processing using system instructions
+    *   **Executor Mode**: For complex agent-based operations and interactions
 *   **Rich User Interface Components**:
-    *   **Mode Selection**: Radio buttons to switch between Simple and Main modes
+    *   **Mode Selection**: Radio buttons to switch between Inquirer and Executor modes
     *   **Prompt Type Selection**: Dropdown menu with dynamic loading of available prompt types
     *   **Context Input**: Text area for loading additional context from files or clipboard
     *   **User Input**: Multi-line text area for entering prompts
