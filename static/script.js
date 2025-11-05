@@ -1,4 +1,4 @@
-let currentMode = 'simple';
+let currentMode = 'inquirer';
 
 /**
  * Initialize the application on page load
@@ -77,7 +77,7 @@ function handleFormSubmit(e) {
     
     // Determine authentication credentials based on selected method
     const apiKey = authMethod === 'api_key' ? formData.get('api_key') : null;
-    const apiPassword = authMethod === 'password' || formData.get('mode') === 'main'? formData.get('api_password') : null;
+    const apiPassword = authMethod === 'password' || formData.get('mode') === 'executor'? formData.get('api_password') : null;
     
     // Show loading state
     document.getElementById('loading').classList.add('show');
@@ -449,7 +449,7 @@ function toggleAuthMethod() {
     if (authMethod === 'api_key') {
         apiKeySection.style.display = 'block';
         apiKeyInput.required = true;
-        if (mode === 'main') {
+        if (mode === 'executor') {
             passwordSection.style.display = 'block';
             passwordInput.required = true;
         }

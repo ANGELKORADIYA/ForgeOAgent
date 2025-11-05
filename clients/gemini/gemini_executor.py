@@ -22,15 +22,15 @@ from google.api_core.exceptions import Unauthenticated, ResourceExhausted, Googl
 
 MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),"..", "..", "mcp", "tools"))
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..","..", "logs"))
-MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "main_agent")
-AGENT_LOG_DIR = os.path.join(LOG_DIR, "agent")
-# os.makedirs(LOG_DIR, exist_ok=True)
-# os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-# os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
+AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
+os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
 
 
-class GeminiBase:
+class GeminiExecutor:
     def generate_content(self, prompt: str, max_retries: int = 3, previous_conversation_log: bool = True,system_instruction:str = None) -> Dict[str, Any]:
         """Make API call with error handling and retry logic."""
         
@@ -51,7 +51,7 @@ class GeminiBase:
             contents.extend(self._get_referenced_agent_json_contents(self.reference_json))
         # 2. Add previous conversation
         if previous_conversation_log and not self.new_content:
-            contents.extend(self._get_previous_conversation_contents('main_agent'))
+            contents.extend(self._get_previous_conversation_contents('executor'))
         
         # 3. Add current conversation prompts
         contents.extend(self._contents)
@@ -138,12 +138,6 @@ class GeminiBase:
             except Exception as e:
                 error_msg = str(e)
                 self._log_interaction(prompt, None, success=False, error=error_msg)
-                
-                if any(keyword in error_msg.lower() for keyword in ["quota", "limit", "invalid", "unauthorized"]):
-                    manager.mark_key_failed(api_key, error_msg)
-                    if retry < max_retries - 1:
-                        continue
-                
                 raise e
         
         raise Exception(f"Failed after {max_retries} retries")

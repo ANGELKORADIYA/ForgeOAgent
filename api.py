@@ -24,13 +24,13 @@ sys.path.insert(0, str(parent_dir))
 
 try:
     from main import (
-        run_prompt_improvement,
-        print_available_system_instructions,
-        print_available_agents,
-        auto_import_system_prompts,
+        inquirer_using_selected_system_instructions,
+        print_available_inquirers,
+        print_available_executors,
+        auto_import_inquirers,
         GeminiAPIClient,
         AgentManager,
-        create_master_agent
+        create_master_executor
     )
     load_dotenv()
 except ImportError as e:
@@ -158,13 +158,13 @@ async def verify_api_password(request: Request, call_next):
     # Get password from header
     password = request.headers.get("X-API-Password")
     
-    # Handle main mode authentication
+    # Handle executor mode authentication
     if request.url.path == "/api/process-with-key":
         # Get request body
         try:
             body = await request.json()
-            if body.get("mode") != "main":
-                # For main mode, require password even with API key
+            if body.get("mode") != "executor":
+                # For executor mode, require password even with API key
                 response = await call_next(request)
                 return response
         except:
@@ -203,7 +203,7 @@ templates = Jinja2Templates(directory="templates")
 
 # Auto-import system prompts on startup
 try:
-    auto_import_system_prompts()
+    auto_import_inquirers()
 except Exception as e:
     print(f"Error importing system prompts: {e}")
 
@@ -213,7 +213,7 @@ class PromptRequest(BaseModel):
     prompt_text: str
     prompt_type: str
     context: Optional[str] = None
-    mode: str = "simple"  # simple or main
+    mode: str = "inquirer"  # inquirer or executor
     new_content: bool = True
     api_key: Optional[str] = None
 
@@ -255,15 +255,15 @@ async def read_root(request: Request):
 
 
 @app.get("/api/prompt-types")
-async def get_prompt_types(mode: str = "simple"):
+async def get_prompt_types(mode: str = "inquirer"):
     """Get available prompt types based on mode"""
     try:
-        if mode == "main":
-            output, _ = capture_print_output(print_available_agents)
+        if mode == "executor":
+            output, _ = capture_print_output(print_available_executors)
             lines = [line.strip() for line in output.strip().split('\n') if line.strip()]
             prompt_types = [line for line in lines if line != "No agents found." and line]
         else:
-            output, _ = capture_print_output(print_available_system_instructions)
+            output, _ = capture_print_output(print_available_inquirers)
             lines = [line.strip() for line in output.strip().split('\n') if line.strip()]
             prompt_types = []
             for line in lines:
@@ -292,7 +292,7 @@ async def process_prompt_common(
     
     Args:
         prompt_text: The prompt text to process
-        mode: Processing mode ('simple' or 'main')
+        mode: Processing mode ('inquirer' or 'executor')
         prompt_type: Type of prompt to use
         context: Optional context to include
         new_content: Whether to process as new content
@@ -318,8 +318,8 @@ async def process_prompt_common(
         
         result = ""
         
-        if mode == "main":
-            # Main mode processing
+        if mode == "executor":
+            # executor mode processing
             agent_manager = AgentManager()
             prompt_text_path = None
             
@@ -330,7 +330,7 @@ async def process_prompt_common(
                     prompt_text_path = None
             
             output, _ = capture_print_output(
-                create_master_agent,
+                create_master_executor,
                 api_keys,
                 final_text,
                 shell_enabled=True,
@@ -340,9 +340,9 @@ async def process_prompt_common(
             )
             result = output.strip()
         else:
-            # Simple mode processing
+            # inquirer mode processing
             output, _ = capture_print_output(
-                run_prompt_improvement,
+                inquirer_using_selected_system_instructions,
                 final_text,
                 api_keys,
                 prompt_type,
@@ -424,7 +424,7 @@ async def save_agent(request: SaveAgentRequest):
         conversation_id = request.conversation_id
         
         if not conversation_id:
-            conversation_id = GeminiAPIClient._get_last_conversation_id('main_agent')
+            conversation_id = GeminiAPIClient._get_last_conversation_id('executor')
         
         if not conversation_id:
             raise HTTPException(status_code=404, detail="No conversation found to save")
@@ -444,10 +444,10 @@ async def save_agent(request: SaveAgentRequest):
 
 
 @app.get("/api/agents")
-async def list_agents():
+async def list_executors():
     """List all available agents"""
     try:
-        output, _ = capture_print_output(print_available_agents)
+        output, _ = capture_print_output(print_available_executors)
         lines = [line.strip() for line in output.strip().split('\n') if line.strip()]
         agents = [line for line in lines if line != "No agents found." and line]
         
@@ -464,7 +464,7 @@ async def list_agents():
 async def list_system_instructions():
     """List all available system instructions"""
     try:
-        output, _ = capture_print_output(print_available_system_instructions)
+        output, _ = capture_print_output(print_available_inquirers)
         lines = [line.strip() for line in output.strip().split('\n') if line.strip()]
         instructions = []
         for line in lines:

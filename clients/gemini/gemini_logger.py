@@ -6,19 +6,19 @@ from typing import Dict, List, Any, Optional
 
 MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "mcp", "tools"))
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
-MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "main_agent")
-AGENT_LOG_DIR = os.path.join(LOG_DIR, "agent")
-# os.makedirs(LOG_DIR, exist_ok=True)
-# os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-# os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
+AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
+os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
-class GeminiLogHandler:
-    def _init_log_file(self,type:str = "agent"):
+class GeminiLogger:
+    def _init_log_file(self,type:str = "inquirer"):
         """Initialize the log file with metadata."""
         if not self.conversation_id:
             self.conversation_id = f"{type}_{datetime.now().strftime("%Y%m%d_%H%M%S")}_{uuid.uuid4().hex[:8]}"
             
-        if "main_agent" == type or "main_agent" in self.conversation_id:
+        if "executor" == type or "executor" in self.conversation_id:
             self.log_file = os.path.join(MAIN_AGENT_LOG_DIR, f"{self.conversation_id}.jsonl")
         else:
             self.log_file = os.path.join(AGENT_LOG_DIR, f"{self.conversation_id}.jsonl")
@@ -33,16 +33,16 @@ class GeminiLogHandler:
                 }
                 f.write(json.dumps(metadata) + "\n")
     
-    def _log_interaction(self, prompt: str, response_data: Any, success: bool = True, error: str = None,type:str = "agent"):
+    def _log_interaction(self, prompt: str, response_data: Any, success: bool = True, error: str = None,type:str = "inquirer",log_type:str = "interaction"):
         """Log API interactions."""
         # self._init_log_file(type)
         
         log_entry = {
-            "type": "interaction",
+            "type": log_type,
             "timestamp": datetime.now().isoformat(),
             "request_count": self.request_count,
             "success": success,
-            "input": prompt[:500] + "..." if len(prompt) > 500 else prompt,
+            "input": prompt,
         }
         
         if success and response_data:
