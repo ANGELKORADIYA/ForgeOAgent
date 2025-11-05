@@ -32,9 +32,9 @@ MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "m
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
 MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
 AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+# os.makedirs(LOG_DIR, exist_ok=True)
+# os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
+# os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
 class GeminiAPIClient(GeminiLogger,GeminiContentManager,GeminiExecutor,GeminiInquirer):
     def __init__(self, 
