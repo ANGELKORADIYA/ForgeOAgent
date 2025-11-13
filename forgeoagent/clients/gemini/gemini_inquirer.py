@@ -57,12 +57,15 @@ class GeminiInquirer:
             api_key = None
             try:
                 api_key = manager.get_current_key()
-                # tools = [types.Tool(url_context=types.UrlContext())]
+                tools = [
+                    types.Tool(googleSearch=types.GoogleSearch()),
+                    # types.Tool(url_context=types.UrlContext()),
+                    ]
                 # Configure generation
                 generate_config = types.GenerateContentConfig(
                     thinking_config = types.ThinkingConfig(thinking_budget=-1,),
                     response_mime_type="text/plain",
-                    # tools=tools,
+                    tools=tools,
                     system_instruction=[
                         types.Part.from_text(text=system_instruction)
                     ],
