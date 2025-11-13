@@ -15,14 +15,14 @@ sys.path.insert(0, str(parent_dir))
 
 try:
     # Import functions from main.py
-    from main import (
-        run_prompt_improvement,
-        print_available_system_instructions,
-        print_available_agents,
-        auto_import_system_prompts,
+    from forgeoagent.main import (
+        inquirer_using_selected_system_instructions,
+        print_available_inquirers,
+        print_available_executors,
+        auto_import_inquirers,
         GeminiAPIClient,
         AgentManager,
-        create_master_agent
+        create_master_executor
     )
     from dotenv import load_dotenv
     
@@ -51,7 +51,7 @@ class PromptProcessorFrame(wx.Frame):
         
         # Auto-import system prompts
         try:
-            auto_import_system_prompts()
+            auto_import_inquirers()
         except Exception as e:
             print(f"Error importing system prompts: {e}")
         
@@ -70,11 +70,11 @@ class PromptProcessorFrame(wx.Frame):
         mode_box = wx.StaticBox(panel, label="Processing Mode")
         mode_sizer = wx.StaticBoxSizer(mode_box, wx.HORIZONTAL)
         
-        self.mode_simple = wx.RadioButton(panel, label="Simple Mode", style=wx.RB_GROUP)
-        self.mode_main = wx.RadioButton(panel, label="Main Mode")
+        self.mode_inquirer = wx.RadioButton(panel, label="Inquirer Mode", style=wx.RB_GROUP)
+        self.mode_executor = wx.RadioButton(panel, label="Executor Mode")
         
-        mode_sizer.Add(self.mode_simple, 0, wx.ALL, 5)
-        mode_sizer.Add(self.mode_main, 0, wx.ALL, 5)
+        mode_sizer.Add(self.mode_inquirer, 0, wx.ALL, 5)
+        mode_sizer.Add(self.mode_executor, 0, wx.ALL, 5)
         
         main_sizer.Add(mode_sizer, 0, wx.ALL | wx.EXPAND, 5)
         
@@ -153,8 +153,8 @@ class PromptProcessorFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_get_clipboard, self.get_clipboard_btn)
         self.Bind(wx.EVT_BUTTON, self.on_clear_context, self.clear_context_btn)
         self.Bind(wx.EVT_BUTTON, self.on_process, self.process_btn)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_mode_change, self.mode_simple)
-        self.Bind(wx.EVT_RADIOBUTTON, self.on_mode_change, self.mode_main)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_mode_change, self.mode_inquirer)
+        self.Bind(wx.EVT_RADIOBUTTON, self.on_mode_change, self.mode_executor)
         
     def capture_print_output(self, func, *args, **kwargs):
         """Capture print output from a function that uses print statements"""
@@ -180,14 +180,14 @@ class PromptProcessorFrame(wx.Frame):
         self.status_bar.SetStatusText("Loading prompt types...")
         
         try:
-            if self.mode_main.GetValue():
-                # Main mode - get agents
-                output, _ = self.capture_print_output(print_available_agents)
+            if self.mode_executor.GetValue():
+                # Executor mode - get agents
+                output, _ = self.capture_print_output(print_available_executors)
                 lines = [line.strip() for line in output.strip().split('\n') if line.strip()]
                 prompt_types = [line for line in lines if line != "No agents found." and line]
             else:
-                # Simple mode - get system instructions
-                output, _ = self.capture_print_output(print_available_system_instructions)
+                # Inquirer mode - get system instructions
+                output, _ = self.capture_print_output(print_available_inquirers)
                 lines = [line.strip() for line in output.strip().split('\n') if line.strip()]
                 prompt_types = []
                 for line in lines:
@@ -295,8 +295,8 @@ class PromptProcessorFrame(wx.Frame):
             new_content = self.new_content_cb.GetValue()
             result = ""
             
-            if self.mode_main.GetValue():
-                # Main mode - use create_master_agent function
+            if self.mode_executor.GetValue():
+                # Executor mode - use create_master_executor function
                 try:
                     agent_manager = AgentManager()
                     prompt_text_path = None
@@ -307,9 +307,9 @@ class PromptProcessorFrame(wx.Frame):
                         except:
                             prompt_text_path = None
                     
-                    # Capture output from create_master_agent
+                    # Capture output from create_master_executor
                     output, _ = self.capture_print_output(
-                        create_master_agent,
+                        create_master_executor,
                         self.api_keys,
                         final_text,
                         shell_enabled=True,
@@ -321,12 +321,12 @@ class PromptProcessorFrame(wx.Frame):
                     result = output.strip()
                     
                 except Exception as e:
-                    raise Exception(f"Main mode processing failed: {str(e)}")
+                    raise Exception(f"Executor mode processing failed: {str(e)}")
             else:
-                # Simple mode - use run_prompt_improvement
+                # Inquirer mode - use inquirer_using_selected_system_instructions
                 try:
                     output, _ = self.capture_print_output(
-                        run_prompt_improvement,
+                        inquirer_using_selected_system_instructions,
                         final_text,
                         self.api_keys,
                         selected_type,
@@ -334,7 +334,7 @@ class PromptProcessorFrame(wx.Frame):
                     )
                     result = output.strip()
                 except Exception as e:
-                    raise Exception(f"Simple mode processing failed: {str(e)}")
+                    raise Exception(f"Inquirer mode processing failed: {str(e)}")
             
             # Show result on main thread
             if result:
@@ -359,18 +359,18 @@ class PromptProcessorFrame(wx.Frame):
     def show_result(self, result, selected_type):
         """Show processing result"""
         # Create result dialog
-        dlg = ResultDialog(self, result, selected_type,self.mode_main.GetValue())
+        dlg = ResultDialog(self, result, selected_type,self.mode_executor.GetValue())
         dlg.ShowModal()
         dlg.Destroy()
 
 
 class ResultDialog(wx.Dialog):
-    def __init__(self, parent, result_text, prompt_type, mode_main):
+    def __init__(self, parent, result_text, prompt_type, mode_executor):
         super().__init__(parent, title=f"Result - {prompt_type}", 
                         size=(800, 600), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
         
         self.result_text = result_text
-        self.mode_main = mode_main
+        self.mode_executor = mode_executor
         self.init_ui()
         self.Center()
         
@@ -387,7 +387,7 @@ class ResultDialog(wx.Dialog):
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
         
         self.copy_btn = wx.Button(panel, label="Copy to Clipboard")
-        if self.mode_main:
+        if self.mode_executor:
             self.save_btn = wx.Button(panel, label="Save Result")
             button_sizer.Add(self.save_btn, 0, wx.ALL, 5)
         self.close_btn = wx.Button(panel, wx.ID_CLOSE, "Close")
@@ -402,7 +402,7 @@ class ResultDialog(wx.Dialog):
         
         # Bind events
         self.Bind(wx.EVT_BUTTON, self.on_copy, self.copy_btn)
-        if self.mode_main:
+        if self.mode_executor:
             self.Bind(wx.EVT_BUTTON, self.on_save, self.save_btn)
         self.Bind(wx.EVT_BUTTON, self.on_close, self.close_btn)  # Add close logic
 
@@ -434,7 +434,7 @@ class ResultDialog(wx.Dialog):
             if save_name:
                 try:
                     # Use AgentManager to save directly
-                    conversation_id = GeminiAPIClient._get_last_conversation_id('main_agent')
+                    conversation_id = GeminiAPIClient._get_last_conversation_id('executor')
                     if conversation_id:
                         agent_manager = AgentManager()
                         agent_manager.save_agent(

@@ -1,6 +1,6 @@
 # ForgeOAgent
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 > **Intelligent automation for everyone:**  
@@ -14,8 +14,8 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 
 - **Cross-platform shell support:** Works on Windows & Linux.
 - **Flexible agent modes:**  
-	- *Simple Mode*: Use system prompts for quick tasks.  
-	- *Main Mode*: Advanced workflows, agent management, and context-aware automation.
+	- *Inquirer Mode*: Use system prompts for quick tasks.  
+	- *Executor Mode*: Advanced workflows, agent management, and context-aware automation.
 - **Customizable prompts:** Easily add your own system instructions for new agent behaviors in `mcp/system_prompts/`
 - **Persistent chat history:** Optionally load recent conversations for better context and accuracy.
 - **Automatic tool integration:** Place Python classes in `mcp/tools` to auto-expose new agent capabilities.
@@ -33,6 +33,17 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 - `logs/` — JSONL logs of agent activities and improvements.
 - `shell/` — Shell scripts for Linux and Windows environments.
 - `mcp/` — System prompts, agent context, and tools for modular extension.
+
+
+> UseFul :
+- GeminiAPIClient().generate_content
+- GeminiAPIClient().search_content
+- from forgeoagent.controller.executor_controller import create_master_executor
+
+> use :
+
+- from forgeoagent.controller.executor_controller import print_available_executors , save_last_executor
+- from forgeoagent.controller.inquirer_controller import inquirer_using_selected_system_instructions , print_available_inquirers , auto_import_inquirers
 
 ---
 
@@ -74,9 +85,9 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 ## 💡 Usage Examples
 
 - **Quick prompt improvement:**  
-	Use Simple Mode to enhance text, code, or emails with a single command.
+	Use Inquirer Mode to enhance text, code, or emails with a single command.
 - **Context-aware automation:**  
-	Use Main Mode to leverage previous conversations and agent context for more complex tasks.
+	Use Executor Mode to leverage previous conversations and agent context for more complex tasks.
 
 
 ---
