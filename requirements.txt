@@ -1,10 +1,9 @@
 requests
-dotenv
 python-dotenv
-google
 google-genai==1.25.0
 google-api-core
 google-generativeai
+wxPython
 fastapi
 python-multipart
 uvicorn

@@ -2,7 +2,7 @@ from google import genai
 from google.genai import types
 import os
 
-from core.class_analyzer import PyClassAnalyzer
+from forgeoagent.core.class_analyzer import PyClassAnalyzer
 
 
 MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "tools"))
@@ -192,7 +192,7 @@ DEFAULT_OUTPUT_PROPERTIES = {
     )
 }
 
-DEFAULT_MODEL = "gemini-2.5-flash-preview-05-20"
+DEFAULT_MODEL = "gemini-2.5-flash"
 DEFAULT_SAFETY_SETTINGS = [
     types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_LOW_AND_ABOVE"),
     types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_LOW_AND_ABOVE"),
@@ -207,3 +207,5 @@ Instructions:
 - Do NOT mention that you searched source; just provide the answer.
 - If you cannot find an answer, reply with an empty string.
 """
+
+

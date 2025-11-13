@@ -8,9 +8,9 @@ MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
 MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
 AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
-# os.makedirs(LOG_DIR, exist_ok=True)
-# os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-# os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
+os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
 class GeminiLogger:
     def _init_log_file(self,type:str = "inquirer"):
@@ -35,7 +35,7 @@ class GeminiLogger:
     
     def _log_interaction(self, prompt: str, response_data: Any, success: bool = True, error: str = None,type:str = "inquirer",log_type:str = "interaction"):
         """Log API interactions."""
-        # self._init_log_file(type)
+        self._init_log_file(type)
         
         log_entry = {
             "type": log_type,
@@ -59,5 +59,5 @@ class GeminiLogger:
         if error:
             log_entry["error"] = error
         
-        # with open(self.log_file, "a", encoding="utf-8") as f:
-        #     f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")
+        with open(self.log_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry, ensure_ascii=False) + "\n")

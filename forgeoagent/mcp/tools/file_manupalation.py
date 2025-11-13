@@ -4,8 +4,8 @@ class FileManipulation:
     """Use This Class when file write and read must use this only"""
     
     def __init__(self):
-        self.base_dir =  "/home/userpc/29/ForgeOAgent/logs/base_dir"
-        # os.makedirs(self.base_dir, exist_ok=True)
+        self.base_dir =  f"{os.path.dirname(os.path.abspath(__file__))}/../../logs/base_dir"
+        os.makedirs(self.base_dir, exist_ok=True)
 
     def write_file(self,path: str, data: str) -> str:
         """
@@ -19,7 +19,7 @@ class FileManipulation:
             full_path = os.path.join(self.base_dir, path)
             
             # Ensure directory exists
-            # os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
             
             # Write data to file
             with open(full_path, 'w', encoding='utf-8') as f:
@@ -66,12 +66,9 @@ if __name__ == "__main__":
     data = "This is sample data to write into the file.\n   hello\tf"
     
     try:
-        file_created = FileManipulation.write_file( relative_path, data)
+        file_created = FileManipulation().write_file( relative_path, data)
         print(f"File successfully written to: {file_created}")
         content = FileManipulation().read_file(file_created)
-        print("Read file content:")
-        print(content)
-        content = FileManipulation().read_file("/home/userpc/Desktop/29/ForgeOAgent/mcp/tools/memory.py")
         print("Read file content:")
         print(content)
 

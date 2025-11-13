@@ -1,6 +1,6 @@
 # ForgeOAgent
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.12%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 > **Intelligent automation for everyone:**  
@@ -33,6 +33,17 @@ ForgeOAgent is a modular Python framework for building, managing, and running AI
 - `logs/` — JSONL logs of agent activities and improvements.
 - `shell/` — Shell scripts for Linux and Windows environments.
 - `mcp/` — System prompts, agent context, and tools for modular extension.
+
+
+> UseFul :
+- GeminiAPIClient().generate_content
+- GeminiAPIClient().search_content
+- from forgeoagent.controller.executor_controller import create_master_executor
+
+> use :
+
+- from forgeoagent.controller.executor_controller import print_available_executors , save_last_executor
+- from forgeoagent.controller.inquirer_controller import inquirer_using_selected_system_instructions , print_available_inquirers , auto_import_inquirers
 
 ---
 

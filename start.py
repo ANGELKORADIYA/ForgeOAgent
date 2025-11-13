@@ -15,7 +15,7 @@ sys.path.insert(0, str(parent_dir))
 
 try:
     # Import functions from main.py
-    from main import (
+    from forgeoagent.main import (
         inquirer_using_selected_system_instructions,
         print_available_inquirers,
         print_available_executors,

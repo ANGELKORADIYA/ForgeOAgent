@@ -3,10 +3,10 @@ from datetime import datetime
 import traceback
 from typing import Dict, List, Any, Optional
 
-from core.managers.pip_install_manager import PIPInstallManager
-from core.class_analyzer import PyClassAnalyzer
+from forgeoagent.core.managers.pip_install_manager import PIPInstallManager
+from forgeoagent.core.class_analyzer import PyClassAnalyzer
 
-from core.config_prompts import (
+from forgeoagent.config.config_prompts import (
     DEFAULT_SYSTEM_INSTRUCTION,
     DEFAULT_OUTPUT_REQUIRED,
     DEFAULT_OUTPUT_PROPERTIES,
@@ -21,13 +21,13 @@ MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "m
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
 MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
 AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
-# os.makedirs(LOG_DIR, exist_ok=True)
-# os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-# os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
+os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
 
-from clients.gemini_engine import GeminiAPIClient
-from core.managers.agent_manager import AgentManager
+from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.core.managers.agent_manager import AgentManager
 
 def print_available_executors():
     """Print all saved agents from AgentManager."""

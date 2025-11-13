@@ -1,4 +1,4 @@
-REGEX_SYSTEM_INSTRUCTION = """You are a expert regex pattern generator. Your sole purpose is to analyze the given text and generate appropriate regular expressions.
+REGEX_SYSTEM_INSTRUCTION = r"""You are a expert regex pattern generator. Your sole purpose is to analyze the given text and generate appropriate regular expressions.
 
 **CRITICAL INSTRUCTIONS:**
 - Output ONLY the regex pattern(s)

@@ -2,22 +2,22 @@ import os
 import sys
 from dotenv import load_dotenv
 from typing import List
-from clients.gemini_engine import GeminiAPIClient
-from core.managers.agent_manager import AgentManager
-from core.managers.security_manager import SecurityManager
+from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.core.managers.agent_manager import AgentManager
+from forgeoagent.core.managers.security_manager import SecurityManager
 
 load_dotenv()
 
 # only import prompts to activate and have _system_instruction
 import os
-from controller.executor_controller import save_last_executor , print_available_executors , create_master_executor
-from controller.inquirer_controller import print_available_inquirers , auto_import_inquirers , inquirer_using_selected_system_instructions
+from forgeoagent.controller.executor_controller import save_last_executor , print_available_executors , create_master_executor
+from forgeoagent.controller.inquirer_controller import print_available_inquirers , auto_import_inquirers , inquirer_using_selected_system_instructions
 
 
 # Usage - just call this once
 auto_import_inquirers()
 
-if __name__ == "__main__":
+def main():
     # Initialize security system
     security = SecurityManager()
     security.start_monitoring()
@@ -71,3 +71,6 @@ if __name__ == "__main__":
     else:
         create_master_executor(api_keys)
     security.stop_monitoring()
+
+if __name__ == "__main__":
+    main()

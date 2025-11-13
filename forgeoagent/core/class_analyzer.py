@@ -4,7 +4,7 @@ import json
 from typing import Dict, List, Any, Union, Optional
 import importlib.util
 
-from core.managers import InstrumentModule
+from forgeoagent.core.managers import InstrumentModule
 
 class PyClassAnalyzer:
     @staticmethod
@@ -139,4 +139,4 @@ class PyClassAnalyzer:
         return class_map
     
 if __name__ == "__main__":
-    print(PyClassAnalyzer().analyze_dir(input("path:")))
+    print(PyClassAnalyzer().get_all_classes(input("path:")))

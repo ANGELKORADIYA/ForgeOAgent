@@ -17,13 +17,15 @@ from fastapi import BackgroundTasks
 import time
 import secrets
 
+from services.content_fetcher import ContentImageFetcher, fetch_content_images
+
 # Add the parent directories to sys.path
 current_dir = Path(__file__).parent.resolve()
 parent_dir = current_dir.parent
 sys.path.insert(0, str(parent_dir))
 
 try:
-    from main import (
+    from forgeoagent.main import (
         inquirer_using_selected_system_instructions,
         print_available_inquirers,
         print_available_executors,
@@ -40,7 +42,7 @@ except ImportError as e:
 # Initialize FastAPI app
 app = FastAPI(title="Prompt Processor API", version="1.0.0")
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=f"{current_dir}/static"), name="static")
 
 def _delayed_exit(delay: float = 0.5):
         """Sleep for `delay` seconds and then exit the process."""
@@ -198,7 +200,7 @@ async def verify_api_password(request: Request, call_next):
     return response
 
 # Initialize templates (optional, for serving HTML form)
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=f"{current_dir}/templates")
 
 
 # Auto-import system prompts on startup
@@ -228,6 +230,121 @@ class ProcessResponse(BaseModel):
     result: Optional[str] = None
     error: Optional[str] = None
 
+class ContentImageRequest(BaseModel):
+    title: str
+    description: Optional[str] = None
+    convert_to_base64: bool = True
+    api_key: Optional[str] = None
+
+
+class ContentImageResponse(BaseModel):
+    success: bool
+    response: Optional[str] = None
+    main_title: Optional[str] = None
+    images_links: Optional[List[str]] = None
+    images_base64: Optional[List[str]] = None
+    failed_images: Optional[List[str]] = None
+    error: Optional[str] = None
+
+@app.post("/api/content-images-with-key", response_model=ContentImageResponse)
+async def get_content_images_with_key(request: ContentImageRequest):
+    """
+    Get content with images using API key authentication.
+    Fetches relevant images for a title/description, downloads them, and converts to base64.
+    
+    Args:
+        request: ContentImageRequest containing title, description, and API key
+        
+    Returns:
+        ContentImageResponse with title, images links, and base64 images
+    """
+    if not request.api_key:
+        raise HTTPException(status_code=400, detail="API key is required")
+    
+    # Parse API keys - can be comma-separated
+    api_keys = (
+        [request.api_key] 
+        if "," not in request.api_key 
+        else [key.strip() for key in request.api_key.split(",") if key.strip()]
+    )
+    
+    try:
+        # Create fetcher instance
+        fetcher = ContentImageFetcher(
+            api_keys=api_keys,
+        )
+        
+        # Get content with images
+        result = fetcher.get_title_and_images(
+            title=request.title,
+            description=request.description,
+            convert_to_base64=request.convert_to_base64
+        )
+        
+        return ContentImageResponse(
+            success=True,
+            response=result.get("response"),
+            main_title=result.get("main_title"),
+            images_links=result.get("images_links", []),
+            images_base64=result.get("images_base64", []),
+            failed_images=result.get("failed_images", [])
+        )
+    
+    except Exception as e:
+        return ContentImageResponse(
+            success=False,
+            error=str(e)    
+        )
+
+
+@app.post("/api/content-images", response_model=ContentImageResponse)
+async def get_content_images(request: ContentImageRequest):
+    """
+    Get content with images using password authentication (via middleware).
+    Uses API keys from environment variables.
+    
+    Args:
+        request: ContentImageRequest containing title and description
+        
+    Returns:
+        ContentImageResponse with title, images links, and base64 images
+    """
+    # Get API keys from environment
+    api_keys = []
+    gemini_keys = os.getenv("GEMINI_API_KEYS")
+    if gemini_keys:
+        api_keys = [key.strip() for key in gemini_keys.split(",") if key.strip()]
+    
+    if not api_keys:
+        raise HTTPException(status_code=500, detail="No API keys configured")
+    
+    try:
+        # Create fetcher instance
+        fetcher = ContentImageFetcher(
+            api_keys=api_keys,
+        )
+        
+        # Get content with images
+        result = fetcher.get_title_and_images(
+            title=request.title,
+            description=request.description,
+            convert_to_base64=request.convert_to_base64
+        )
+        
+        return ContentImageResponse(
+            success=True,
+            response=result.get("response"),
+            main_title=result.get("main_title"),
+            images_links=result.get("images_links", []),
+            images_base64=result.get("images_base64", []),
+            failed_images=result.get("failed_images", [])
+        )
+    
+    except Exception as e:
+        return ContentImageResponse(
+            success=False,
+            error=str(e)
+        )
 
 # Helper function to capture print output
 def capture_print_output(func, *args, **kwargs):

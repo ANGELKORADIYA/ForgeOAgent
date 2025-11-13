@@ -1,0 +1,1 @@
+from .class_analyzer import PyClassAnalyzer

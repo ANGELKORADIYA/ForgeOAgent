@@ -2,7 +2,7 @@ import os
 import importlib
 from typing import List
 
-from clients.gemini_engine import GeminiAPIClient
+from forgeoagent.clients.gemini_engine import GeminiAPIClient
 
 def print_available_inquirers():
     """Print all available *_SYSTEM_INSTRUCTION variables from the current context."""
@@ -23,11 +23,12 @@ def auto_import_inquirers(package_path="mcp.system_prompts"):
         if filename.endswith('.py') and not filename.startswith('__'):
             module_name = filename[:-3]
             try:
-                module = importlib.import_module(f"{package_path}.{module_name}")
+                module = importlib.import_module(f"forgeoagent.{package_path}.{module_name}")
                 # Add only uppercase constants ending with SYSTEM_
                 for name in dir(module):
                     if name.isupper() and name.endswith('_SYSTEM_INSTRUCTION') and not name.startswith('_'):
                         globals_dict[name] = getattr(module, name)
+
             except Exception as e:
                 # print(f"✗ Failed to import {module_name}: {e}")
                 pass
