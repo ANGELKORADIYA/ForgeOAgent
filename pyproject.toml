@@ -44,6 +44,7 @@ Issues = "https://github.com/angelkoradiya/forgeoagent/issues"
 
 [project.scripts]
 forgeoagent = "forgeoagent.cli:main"
+app = "forgeoagent.web.api:app"
 
 [tool.setuptools]
 packages = ["forgeoagent"]
