@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "forgeoagent/web/api.py"
+      "dest": "api.py"
     }
   ],
   "installCommand": "pip install -r forgeoagent/web/requirements.txt"
