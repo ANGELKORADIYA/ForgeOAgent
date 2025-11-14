@@ -234,10 +234,6 @@ class StructureManager:
             
             # Store with absolute path as key
             self.structure[abs_path] = folder_structure
-<<<<<<< HEAD:mcp/tools/structure_manager.py
-            
-=======
->>>>>>> 773086ec734cfeb8cab9d71d32b7503efe90fa6b:forgeoagent/mcp/tools/structure_manager.py
             return self._save_structure()
             
         except Exception as e:
@@ -278,8 +274,5 @@ class StructureManager:
 
 if __name__ == "__main__":
     memory_manager = StructureManager()
-<<<<<<< HEAD:mcp/tools/structure_manager.py
     memory_manager.add_folder_structure("/home/userpc/Desktop/29/ForgeOAgent/controller")
-=======
     memory_manager.add_folder_structure(r"A:\@Coding\@Running Projects\ForgeOAgent\forgeoagent")
->>>>>>> 773086ec734cfeb8cab9d71d32b7503efe90fa6b:forgeoagent/mcp/tools/structure_manager.py

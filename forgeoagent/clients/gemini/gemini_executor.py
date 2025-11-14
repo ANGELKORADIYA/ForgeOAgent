@@ -5,30 +5,12 @@ from google import genai
 
 from forgeoagent.core.managers.api_key_manager import GlobalAPIKeyManager
 
-from forgeoagent.config.config_prompts import (
+from forgeoagent.config import (
     DEFAULT_SYSTEM_INSTRUCTION,
-    DEFAULT_OUTPUT_REQUIRED,
-    DEFAULT_OUTPUT_PROPERTIES,
-    DEFAULT_MODEL,
-    DEFAULT_SAFETY_SETTINGS,
-    MAIN_AGENT_SYSTEM_INSTRUCTION,
-    MAIN_AGENT_OUTPUT_REQUIRED,
-    MAIN_AGENT_OUTPUT_PROPERTIES,
-    DEFAULT_SYSTEM_INSTRUCTION_SEARCH,)
+)
 
 from google.genai import types
 from google.api_core.exceptions import Unauthenticated, ResourceExhausted, GoogleAPICallError
-
-
-MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__),"..", "..", "mcp", "tools"))
-LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..","..", "logs"))
-MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
-AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-os.makedirs(AGENT_LOG_DIR, exist_ok=True)
-
-
 
 class GeminiExecutor:
     def generate_content(self, prompt: str, max_retries: int = 3, previous_conversation_log: bool = True,system_instruction:str = None) -> Dict[str, Any]:

@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "forgeoagent"
 version = "0.1.0"
 authors = [
-    {name = "Angel Koradiya", email = "Koradiyaangel11@gmail.com"},
+    {name = "Angel Koradiya", email = "koradiyaangel11@gmail.com"},
 ]
 description = "ForgeOAgent - An AI agent framework"
 readme = "README.md"
@@ -28,6 +28,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "uvicorn>=0.37.0",
     "jinja2>=3.1.0",
+    "wxPython>=4.2.3",
 ]
 
 [project.urls]

@@ -1,11 +1,5 @@
 from google import genai
 from google.genai import types
-import os
-
-from forgeoagent.core.class_analyzer import PyClassAnalyzer
-
-
-MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "tools"))
 
 MAIN_AGENT_SYSTEM_INSTRUCTION = """You are a Main Orchestrator Agent and Master Agent Creator that coordinates a hierarchy of specialized AI agents to decompose complex user requests into structured, executable Python workflows. Your objective is to ensure seamless collaboration among all agents to generate accurate, efficient, and modular Python code solutions.
 
@@ -150,62 +144,3 @@ MAIN_AGENT_OUTPUT_PROPERTIES = {
     )
     
 }
-
-DEFAULT_SYSTEM_INSTRUCTION = """You are a helpful AI assistant that completes tasks efficiently and accurately.
-
-CORE SAFETY CONSTRAINTS - ALWAYS FOLLOW THESE:
-- Never delete, modify, or access system-critical files or directories
-- No operations on system root directories (C:\\ on Windows, / on Unix, /System on macOS)
-- Prevent data corruption, unauthorized access, or information leakage
-- No hacking, exploitation, or malicious activities of any kind
-- Always validate file paths, inputs, and operations before execution
-- Respect user privacy and data protection principles
-- Never execute commands that could harm the user's system or data
-- Avoid operations that could violate user policies, terms of service, or legal requirements
-- Include comprehensive error handling and input validation with proper print statements
-- When working with files, only operate in safe, user-specified directories
-- Never access or modify sensitive system files, configuration files, or user credentials
-- Prevent any actions that could compromise system security or stability
-- Always prioritize user safety and system integrity over task completion
-- If any value is empty in output return empty string instead of anything like NA , null , none , etc.
-- use structure and plan if it is provided in the input to complete the task.
-
-If a request violates these safety constraints, politely decline and suggest a safer alternative approach.
-
-IMPORTANT: If you do not generate any code or response, return an empty string ("").
-"""
-
-DEFAULT_OUTPUT_REQUIRED = ["response","python","imports"]
-DEFAULT_OUTPUT_PROPERTIES = {
-    "response": types.Schema(
-        type=genai.types.Type.STRING, 
-        description="The agent's response to the given task"
-    ),
-    "python": types.Schema(
-        type=genai.types.Type.STRING, 
-        description="The Python code generated to accomplish the task"
-    ),
-    "imports": types.Schema(
-        type=genai.types.Type.ARRAY,
-        items=types.Schema(type=genai.types.Type.STRING),
-        description="List of required packages to install via pip (empty array if none needed)"
-    )
-}
-
-DEFAULT_MODEL = "gemini-2.5-flash"
-DEFAULT_SAFETY_SETTINGS = [
-    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_LOW_AND_ABOVE"),
-    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_LOW_AND_ABOVE"),
-    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_LOW_AND_ABOVE"),
-    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_LOW_AND_ABOVE"),
-]
-
-DEFAULT_SYSTEM_INSTRUCTION_SEARCH = """You are a web search agent. Your task is to search Google for the user's query and return only the most relevant, concise, and accurate plain json object or plain test string.
-Instructions:
-- Perform a Google search using the user's query.
-- Read and synthesize information from the top results.
-- Do NOT mention that you searched source; just provide the answer.
-- If you cannot find an answer, reply with an empty string.
-"""
-
-

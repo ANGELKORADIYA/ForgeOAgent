@@ -6,7 +6,9 @@ from typing import Dict, List, Any, Optional
 
 from google.genai import types
 
-LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
+from forgeoagent.config import (
+    LOG_DIR
+)
 
 class GeminiContentManager:
     @staticmethod

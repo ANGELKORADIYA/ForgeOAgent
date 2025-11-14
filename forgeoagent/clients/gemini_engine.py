@@ -9,32 +9,21 @@ import sys
 
 from forgeoagent.core.managers.pip_install_manager import PIPInstallManager
 from forgeoagent.core.managers.api_key_manager import GlobalAPIKeyManager
-from forgeoagent.core.managers.agent_manager import AgentManager
 from forgeoagent.core.class_analyzer import PyClassAnalyzer
 from forgeoagent.core.helpers import capture_print_output
 
-from forgeoagent.config.config_prompts import (
+from forgeoagent.config import (
     DEFAULT_SYSTEM_INSTRUCTION,
     DEFAULT_OUTPUT_REQUIRED,
     DEFAULT_OUTPUT_PROPERTIES,
     DEFAULT_MODEL,
     DEFAULT_SAFETY_SETTINGS,
-    MAIN_AGENT_SYSTEM_INSTRUCTION,
-    MAIN_AGENT_OUTPUT_REQUIRED,
-    MAIN_AGENT_OUTPUT_PROPERTIES,
-    DEFAULT_SYSTEM_INSTRUCTION_SEARCH,)
+    MCP_TOOLS_DIR,
+)
 
 from google.genai import types
 
 from forgeoagent.clients.gemini import GeminiLogger , GeminiContentManager , GeminiExecutor , GeminiInquirer
-
-MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "tools"))
-LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
-MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
-AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-os.makedirs(AGENT_LOG_DIR, exist_ok=True)
 
 class GeminiAPIClient(GeminiLogger,GeminiContentManager,GeminiExecutor,GeminiInquirer):
     def __init__(self, 
@@ -64,7 +53,6 @@ class GeminiAPIClient(GeminiLogger,GeminiContentManager,GeminiExecutor,GeminiInq
         # self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         # self.conversation_id = conversation_id or f"agent_{self.timestamp}_{uuid.uuid4().hex[:8]}"
         # self.log_file = f"{LOG_DIR}/{self.conversation_id}.jsonl"
-        self._init_log_file()
         
             
         self._contents = []

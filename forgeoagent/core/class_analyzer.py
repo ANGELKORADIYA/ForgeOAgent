@@ -3,6 +3,8 @@ import ast
 import json
 from typing import Dict, List, Any, Union, Optional
 import importlib.util
+import dotenv
+dotenv.load_dotenv()
 
 from forgeoagent.core.managers import InstrumentModule
 
@@ -113,7 +115,6 @@ class PyClassAnalyzer:
         """
         class_map = {}
         analysis_result = cls.analyze_dir(target_dir, is_json=True)
-
         for class_name in analysis_result:
             for filename in os.listdir(target_dir):
                 if not filename.endswith(".py") or filename.startswith("__"):
@@ -128,15 +129,17 @@ class PyClassAnalyzer:
                     module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(module)
 
-                    # if hasattr(module, class_name):
-                    #     class_obj = getattr(module, class_name)
-                    #     InstrumentModule(class_obj)
-                    #     class_map[class_name] = class_obj
-                    #     break  # Found the class, no need to check further files
+                    if hasattr(module, class_name):
+                        class_obj = getattr(module, class_name)
+                        if os.getenv('ENV_STATUS','production') == 'development':
+                            InstrumentModule(class_obj)
+                        class_map[class_name] = class_obj
+                        break
                 except Exception as e:
                     print(f"[!] Failed to load {class_name} from {filename}: {e}")
 
         return class_map
     
 if __name__ == "__main__":
-    print(PyClassAnalyzer().get_all_classes(input("path:")))
+    print(PyClassAnalyzer().get_all_classes("./forgeoagent/mcp/tools"))
+    # print(PyClassAnalyzer().get_all_classes("./forgeoagent/clients/"))

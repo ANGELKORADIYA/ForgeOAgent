@@ -4,13 +4,10 @@ import uuid
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "mcp", "tools"))
-LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
-MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
-AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(MAIN_AGENT_LOG_DIR, exist_ok=True)
-os.makedirs(AGENT_LOG_DIR, exist_ok=True)
+from forgeoagent.config import (
+    MAIN_AGENT_LOG_DIR,
+    AGENT_LOG_DIR
+)
 
 class GeminiLogger:
     def _init_log_file(self,type:str = "inquirer"):
@@ -35,6 +32,10 @@ class GeminiLogger:
     
     def _log_interaction(self, prompt: str, response_data: Any, success: bool = True, error: str = None,type:str = "inquirer",log_type:str = "interaction"):
         """Log API interactions."""
+        # return for not creating logs in production environment
+        if os.getenv('ENV_STATUS','production') == 'production':
+            return
+        
         self._init_log_file(type)
         
         log_entry = {
