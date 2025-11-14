@@ -4,7 +4,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 with open("requirements.txt", "r", encoding="utf-8") as fh:
-    requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
+    core_requirements = [line.strip() for line in fh if line.strip() and not line.startswith("#")]
 
 setup(
     name="forgeoagent",
@@ -25,7 +25,10 @@ setup(
         "Programming Language :: Python :: 3.12",
     ],
     python_requires=">=3.12",
-    install_requires=requirements,
+    install_requires=core_requirements,
+    extras_require={
+        "gui": ["wxPython>=4.2.3"],
+    },
     entry_points={
         "console_scripts": [
             "forgeoagent=forgeoagent.cli:main",
