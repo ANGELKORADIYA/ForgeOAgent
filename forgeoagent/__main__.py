@@ -3,8 +3,8 @@ from .main import main
 
 ## testiong 
 
-from forgeoagent.config import config_prompts
-print(config_prompts.DEFAULT_MODEL)
+from forgeoagent.config import config
+print(config.DEFAULT_MODEL)
 
 from forgeoagent.clients import gemini_engine
 from forgeoagent.clients import GeminiAPIClient
