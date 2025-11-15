@@ -176,7 +176,7 @@ async def verify_api_password(request: Request, call_next):
             )
             
     # Allow these paths without password
-    if 1 or request.url.path in ["/exit","/process-form","/api/prompt-types","/api/agents","/","/health","/api/system-instructions","/favicon.ico","/static/style.css","/static/script.js","/static/logo.png"]:
+    if request.url.path in ["/exit","/process-form","/api/prompt-types","/api/agents","/","/health","/api/system-instructions","/favicon.ico","/static/style.css","/static/script.js","/static/logo.png"]:
         response = await call_next(request)
         return response
     # Read configured API password from environment
