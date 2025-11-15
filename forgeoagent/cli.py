@@ -158,11 +158,10 @@ def shortcut(target, name, hotkey):
     On Windows this will invoke the PowerShell helper at shell/windows/create_shortcut.ps1.
     On Linux it prints instructions for creating a keyboard shortcut and the path to `start.sh` to paste into the launcher command.
     """
-    repo_root = Path(__file__).resolve().parents[1]
-
+    repo_root = os.path.dirname(os.path.abspath(__file__))
     if os.name == 'nt' or sys.platform.startswith('win'):
         # Windows: call the PowerShell script we added
-        ps1 = repo_root / 'shell' / 'windows' / 'create_shortcut.ps1'
+        ps1 = Path(repo_root + '/../shell/windows/create_shortcut.ps1').resolve()
         if not ps1.exists():
             click.echo(f"❌ PowerShell helper not found at {ps1}")
             sys.exit(1)
