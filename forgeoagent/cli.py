@@ -72,6 +72,29 @@ def server(host, port, reload, open_browser):
 
 
 @cli.command()
+def start():
+    """Launch the ForgeOAgent GUI application"""
+    click.echo("🚀 Starting ForgeOAgent GUI...")
+    
+    import subprocess
+    from pathlib import Path
+    
+    # Get the start.py path
+    start_py = Path(__file__).parent / "start.py"
+    
+    if not start_py.exists():
+        click.echo(f"❌ Error: start.py not found at {start_py}")
+        sys.exit(1)
+    
+    try:
+        subprocess.Popen([sys.executable, str(start_py)])
+        click.echo("✅ GUI application launched successfully")
+    except Exception as e:
+        click.echo(f"❌ Error launching GUI: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command()
 def executors():
     """List all available executors/agents"""
     click.echo("📋 Available Executors:")
@@ -199,12 +222,14 @@ def shortcut(target, name, hotkey):
         sys.exit(1)
     else:
         # Non-Windows: print instructions for manual creation
-        linux_start = repo_root / 'shell' / 'linux' / 'start.sh'
+        linux_start = Path(repo_root + '/shell/linux/start.sh').resolve()
+
+
+        click.echo(f"ℹ️ Start script path: {linux_start}")
         if linux_start.exists():
             start_path = str(linux_start.resolve())
         else:
-            # fallback to any start.sh at repo root
-            alt = repo_root / 'start.sh'
+            alt = repo_root + '/start.sh'
             start_path = str(alt.resolve()) if alt.exists() else '<path-to-start.sh>'
 
         click.echo("\n🔔 Create a keyboard shortcut (manual steps):")
