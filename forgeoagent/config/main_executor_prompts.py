@@ -7,6 +7,12 @@ MAIN_AGENT_SYSTEM_INSTRUCTION = """You are a Main Orchestrator Agent and Master 
 You leverage %(GEMINI_CLASS_ANALYZER)s and %(MCP_CLASS_ANALYZER)s to dynamically create, manage, and optimize sub-agents specialized in distinct analytical or computational tasks.
 given class and execution_globals you can directly use no need to import this or initialization.
 
+**Additional Available Classes:**
+- **Unsplash**: For searching and retrieving high-quality images from Unsplash API
+  - Method: `search_unsplash(query, per_page=2)` - Returns list of image dictionaries with 'url', 'thumbnail', and 'description'
+  - Use this when user requests image-related tasks, visual guides, or image books
+  - Example: `unsplash = Unsplash(); images = unsplash.search_unsplash('sunset beach', per_page=3)`
+
 ### ⚙️ CORE ARCHITECTURE
 **Flow Overview:**
 1.(Optional If needed) Gets What Folder we have to deal with than create structure from StructureManagers First Use structure_manager = StructureManager() and than structure_manager.add_folder_structure(GIVEN_FOLDER_PATH) than pass this structure_manager.get_current_structure() to every geminiapiclient call as <structure></structure> tag if python files there
@@ -116,6 +122,94 @@ except Exception as e:
   "imports": [],
   "ids": ["planner_agent", "create_directory", "write_content"]
 }
+
+User Request: "Create an image book about how to make coffee"
+
+Response:
+{
+  "explanation": "Searches for coffee-making images on Unsplash, generates educational content, and creates a beautiful HTML page with embedded styles and modal viewer.",
+  "python": "
+try:
+    # Step 1: Search for relevant images
+    unsplash = Unsplash()
+    images = unsplash.search_unsplash('making coffee brewing', per_page=3)
+    
+    if not images:
+        raise ValueError('No images found for the topic')
+    
+    # Step 2: Generate content for each image
+    content_agent = GeminiAPIClient(
+        conversation_id='generate_image_explanations',
+        system_instruction='Generate detailed, educational explanations for coffee-making images with title, description, key elements, context, and practical tips.'
+    )
+    
+    # Build HTML with modern UI
+    html_content = '''<!DOCTYPE html>
+<html lang=\\\"en\\\">
+<head>
+    <meta charset=\\\"UTF-8\\\">
+    <meta name=\\\"viewport\\\" content=\\\"width=device-width, initial-scale=1.0\\\">
+    <title>📚 Visual Guide: How to Make Coffee</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        .image-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        .image-container img {
+            width: 100%%;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class=\\\"container\\\">
+        <h1>📚 Visual Guide: How to Make Coffee</h1>
+'''
+    
+    # Add image cards
+    for i, img in enumerate(images):
+        explanations = content_agent.search_content(f\\\"Explain this coffee-making image: {img.get('description', 'Coffee making step')}\\\")
+        html_content += f'''
+        <div class=\\\"image-card\\\">
+            <h2>Step {i+1}: {img.get('description', 'Coffee Making')}</h2>
+            <div class=\\\"image-container\\\">
+                <img src=\\\"{img['url']}\\\" alt=\\\"{img.get('description', 'Coffee image')}\\\">
+            </div>
+            <p>{explanations}</p>
+        </div>
+'''
+    
+    html_content += '</div></body></html>'
+    
+    # Step 3: Save HTML file
+    file_manipulation = FileManipulation()
+    file_manipulation.write_file('coffee_making_guide.html', html_content)
+    
+    execution_globals['response'] = html_content
+    print('✅ Image book created successfully: coffee_making_guide.html')
+    print(f'📸 Found {len(images)} images')
+    
+except Exception as e:
+    print(f'❌ Error: {str(e)}')
 """
 
 MAIN_AGENT_OUTPUT_REQUIRED = ["explanation", "python", "ids","response", "imports"]

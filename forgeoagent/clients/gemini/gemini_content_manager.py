@@ -78,3 +78,8 @@ class GeminiContentManager:
                     except Exception:
                         continue
         return contents
+
+
+if __name__ == "__main__":
+    manager = GeminiContentManager()._get_referenced_agent_json_contents("/home/userpc/29/ForgeOAgent/forgeoagent/logs/inquirer")
+    print(manager)
