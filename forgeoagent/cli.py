@@ -151,6 +151,7 @@ def execute(prompt_text, agent, save, new):
             prompt_text,
             shell_enabled=True,
             selected_agent={"agent_name": agent},
+            reference_agent_path=agent,
             new_content=new
         )
         

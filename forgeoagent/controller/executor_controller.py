@@ -4,7 +4,7 @@ import traceback
 from typing import Dict, List, Any, Optional
 
 from forgeoagent.core.managers.pip_install_manager import PIPInstallManager
-from forgeoagent.core.class_analyzer import PyClassAnalyzer
+from forgeoagent.core.mcp_class_analyzer import PyClassAnalyzer
 
 from forgeoagent.config import (
     MAIN_AGENT_SYSTEM_INSTRUCTION,
@@ -28,6 +28,7 @@ def print_available_executors():
 
 
 def save_last_executor(agent_name: str = None):
+    """Save the last executor conversation to the agent manager and return the conversation ID."""
     try:
         conversation_id = GeminiAPIClient._get_last_conversation_id('executor')
         if not agent_name:
@@ -38,12 +39,27 @@ def save_last_executor(agent_name: str = None):
                     agent_name=agent_name,
                     conversation_id=conversation_id
                 )
+    return conversation_id
 
 
 def create_master_executor(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None , shell_enabled:bool = False,new_content:bool = False) -> Dict[str, Any]:
-    """Create the main agent responsible for generating Python code with interactive agent selection."""
+    """Create the main agent responsible for generating Python code with interactive agent selection.
+    
+    Args:
+        api_keys: List of API keys for the Gemini client
+        user_request: The user's request/prompt
+        reference_agent_path: Path to reference agent folder OR agent name (will be resolved to path if not a valid path)
+        selected_agent: Dictionary containing agent information
+        shell_enabled: Whether shell mode is enabled
+        new_content: Whether to create new content
+    """
     print("🚀 AI Agent System")
     print("=" * 60)
+    
+    # SUGGESTION : first get_agent_path than none than also valid because it return none if path not found so it is actual path so back to parameter
+    if reference_agent_path and not os.path.isdir(reference_agent_path):
+        resolved_path = AgentManager().get_agent_path(reference_agent_path)
+        reference_agent_path = resolved_path if resolved_path else reference_agent_path
     
     # If no user_request provided, handle interactive selection
     if user_request is None and not shell_enabled and not selected_agent and not reference_agent_path:

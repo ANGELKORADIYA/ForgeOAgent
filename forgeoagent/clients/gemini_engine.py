@@ -9,7 +9,7 @@ import sys
 
 from forgeoagent.core.managers.pip_install_manager import PIPInstallManager
 from forgeoagent.core.managers.api_key_manager import GlobalAPIKeyManager
-from forgeoagent.core.class_analyzer import PyClassAnalyzer
+from forgeoagent.core.mcp_class_analyzer import PyClassAnalyzer
 from forgeoagent.core.helpers import capture_print_output
 
 from forgeoagent.config import (

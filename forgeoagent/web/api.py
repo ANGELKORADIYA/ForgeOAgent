@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List , Any
 import os
 import sys
 from pathlib import Path
@@ -17,7 +17,7 @@ from fastapi import BackgroundTasks
 import time
 import secrets
 
-from forgeoagent.web.services.content_fetcher import ContentImageFetcher, fetch_content_images
+from forgeoagent.web.services.content_fetcher import ContentImageFetcher, test_fetch_content_images
 
 # Add the parent directories to sys.path
 current_dir = Path(__file__).parent.resolve()
@@ -31,8 +31,8 @@ try:
         print_available_executors,
         auto_import_inquirers,
         GeminiAPIClient,
-        AgentManager,
-        create_master_executor
+        create_master_executor,
+        save_last_executor
     )
     load_dotenv()
 except ImportError as e:
@@ -222,7 +222,6 @@ class PromptRequest(BaseModel):
 
 class SaveAgentRequest(BaseModel):
     agent_name: str
-    conversation_id: Optional[str] = None
 
 
 class ProcessResponse(BaseModel):
@@ -235,15 +234,13 @@ class ContentImageRequest(BaseModel):
     description: Optional[str] = None
     convert_to_base64: bool = True
     api_key: Optional[str] = None
+    gemini_enabled: bool = False
 
 
 class ContentImageResponse(BaseModel):
     success: bool
-    response: Optional[str] = None
-    main_title: Optional[str] = None
-    images_links: Optional[List[str]] = None
-    images_base64: Optional[List[str]] = None
-    failed_images: Optional[List[str]] = None
+    page_source_images_data: Any = None
+    gemini_response: Any = None
     error: Optional[str] = None
 
 @app.post("/api/content-images-with-key", response_model=ContentImageResponse)
@@ -256,17 +253,18 @@ async def get_content_images_with_key(request: ContentImageRequest):
         request: ContentImageRequest containing title, description, and API key
         
     Returns:
-        ContentImageResponse with title, images links, and base64 images
+        ContentImageResponse 
     """
-    if not request.api_key:
-        raise HTTPException(status_code=400, detail="API key is required")
     
     # Parse API keys - can be comma-separated
     api_keys = (
         [request.api_key] 
         if "," not in request.api_key 
         else [key.strip() for key in request.api_key.split(",") if key.strip()]
-    )
+    ) if request.api_key else []
+    
+    if not request.api_key and request.gemini_enabled:
+        raise HTTPException(status_code=400, detail="API key is required")
     
     try:
         # Create fetcher instance
@@ -278,22 +276,20 @@ async def get_content_images_with_key(request: ContentImageRequest):
         result = fetcher.get_title_and_images(
             title=request.title,
             description=request.description,
-            convert_to_base64=request.convert_to_base64
+            convert_to_base64=request.convert_to_base64,
+            fetch_from_gemini=request.gemini_enabled
         )
         
         return ContentImageResponse(
             success=True,
-            response=result.get("response"),
-            main_title=result.get("main_title"),
-            images_links=result.get("images_links", []),
-            images_base64=result.get("images_base64", []),
-            failed_images=result.get("failed_images", [])
+            page_source_images_data=result.get("page_source_images_data"),
+            gemini_response=result.get("gemini_response"),
         )
     
     except Exception as e:
         return ContentImageResponse(
             success=False,
-            error=str(e)    
+            error=str(e),
         )
 
 
@@ -307,7 +303,7 @@ async def get_content_images(request: ContentImageRequest):
         request: ContentImageRequest containing title and description
         
     Returns:
-        ContentImageResponse with title, images links, and base64 images
+        ContentImageResponse 
     """
     # Get API keys from environment
     api_keys = []
@@ -328,16 +324,14 @@ async def get_content_images(request: ContentImageRequest):
         result = fetcher.get_title_and_images(
             title=request.title,
             description=request.description,
-            convert_to_base64=request.convert_to_base64
+            convert_to_base64=request.convert_to_base64,
+            fetch_from_gemini=request.gemini_enabled
         )
         
         return ContentImageResponse(
             success=True,
-            response=result.get("response"),
-            main_title=result.get("main_title"),
-            images_links=result.get("images_links", []),
-            images_base64=result.get("images_base64", []),
-            failed_images=result.get("failed_images", [])
+            page_source_images_data=result.get("page_source_images_data"),
+            gemini_response=result.get("gemini_response"),
         )
     
     except Exception as e:
@@ -437,22 +431,13 @@ async def process_prompt_common(
         
         if mode == "executor":
             # executor mode processing
-            agent_manager = AgentManager()
-            prompt_text_path = None
-            
-            if prompt_type and prompt_type != "None":
-                try:
-                    prompt_text_path = agent_manager.get_agent_path(prompt_type)
-                except Exception:
-                    prompt_text_path = None
-            
             output, _ = capture_print_output(
                 create_master_executor,
                 api_keys,
                 final_text,
                 shell_enabled=True,
                 selected_agent={"agent_name": prompt_type} if prompt_type != "None" else None,
-                reference_agent_path=prompt_text_path,
+                reference_agent_path=prompt_type if prompt_type != "None" else None,
                 new_content=new_content
             )
             result = output.strip()
@@ -537,19 +522,9 @@ async def process_prompt(request: PromptRequest):
 async def save_agent(request: SaveAgentRequest):
     """Save an agent from conversation"""
     try:
-        agent_manager = AgentManager()
-        conversation_id = request.conversation_id
-        
-        if not conversation_id:
-            conversation_id = GeminiAPIClient._get_last_conversation_id('executor')
-        
+        conversation_id = save_last_executor(request.agent_name)
         if not conversation_id:
             raise HTTPException(status_code=404, detail="No conversation found to save")
-        
-        agent_manager.save_agent(
-            agent_name=request.agent_name,
-            conversation_id=conversation_id
-        )
         
         return JSONResponse(content={
             "success": True,

@@ -1,15 +1,14 @@
 import os
 import sys
-from dotenv import load_dotenv
 from typing import List
-from forgeoagent.clients.gemini_engine import GeminiAPIClient
-from forgeoagent.core.managers.agent_manager import AgentManager
-from forgeoagent.core.managers.security_manager import SecurityManager
-
+from dotenv import load_dotenv
 load_dotenv()
 
+from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.core.managers.security_manager import SecurityManager
+
+
 # only import prompts to activate and have _system_instruction
-import os
 from forgeoagent.controller.executor_controller import save_last_executor , print_available_executors , create_master_executor
 from forgeoagent.controller.inquirer_controller import print_available_inquirers , auto_import_inquirers , inquirer_using_selected_system_instructions
 
@@ -46,8 +45,7 @@ def main():
             main_index = args.index("--main") if "--main" in args else -1
             # prompt_text = [args[i] for i in range(len(args)) if i != p_index and i != p_index + 1 and i != main_index][0]
             prompt_text = next(args[i] for i in range(len(args)) if i not in {p_index, p_index + 1 if not p_index == -1 else p_index, main_index,n_index})
-            prompt_text_path = AgentManager().get_agent_path(prompt_type) if prompt_type else None
-            create_master_executor(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_type},reference_agent_path=prompt_text_path,new_content=True if n_index != -1 else False)
+            create_master_executor(api_keys,prompt_text,shell_enabled=shell_enabled,selected_agent={"agent_name":prompt_type},reference_agent_path=prompt_type,new_content=True if n_index != -1 else False)
         except (IndexError, ValueError):
             print("[ERROR] Usage: -p <type> <prompt> --main")
     elif "-p" in args:

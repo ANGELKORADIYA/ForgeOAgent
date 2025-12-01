@@ -22,7 +22,8 @@ try:
         auto_import_inquirers,
         GeminiAPIClient,
         AgentManager,
-        create_master_executor
+        create_master_executor,
+        save_last_executor
     )
     from dotenv import load_dotenv
     
@@ -433,14 +434,8 @@ class ResultDialog(wx.Dialog):
             save_name = dlg.GetValue().strip()
             if save_name:
                 try:
-                    # Use AgentManager to save directly
-                    conversation_id = GeminiAPIClient._get_last_conversation_id('executor')
+                    conversation_id = save_last_executor(save_name)
                     if conversation_id:
-                        agent_manager = AgentManager()
-                        agent_manager.save_agent(
-                            agent_name=save_name,
-                            conversation_id=conversation_id
-                        )
                         wx.MessageBox(f"Result saved as: {save_name}", "Success", 
                                      wx.OK | wx.ICON_INFORMATION)
                     else:
@@ -454,7 +449,6 @@ class ResultDialog(wx.Dialog):
         dlg.Destroy()
 
 
-class PromptProcessorApp(wx.App):
     def OnInit(self):
         frame = PromptProcessorFrame()
         frame.Show()

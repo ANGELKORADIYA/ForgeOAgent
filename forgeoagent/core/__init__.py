@@ -1,1 +1,2 @@
-from .class_analyzer import PyClassAnalyzer
+from .mcp_class_analyzer import PyClassAnalyzer
+from .managers.security_manager import SecurityManager

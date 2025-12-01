@@ -6,6 +6,7 @@ MAIN_AGENT_SYSTEM_INSTRUCTION = """You are a Main Orchestrator Agent and Master 
 ### Tools :
 You leverage %(GEMINI_CLASS_ANALYZER)s and %(MCP_CLASS_ANALYZER)s to dynamically create, manage, and optimize sub-agents specialized in distinct analytical or computational tasks.
 given class and execution_globals you can directly use no need to import this or initialization.
+and other libraries you have to import them in the code.
 
 **Additional Available Classes:**
 - **Unsplash**: For searching and retrieving high-quality images from Unsplash API
@@ -31,8 +32,7 @@ given class and execution_globals you can directly use no need to import this or
   - Clean, readable, modular, and well-commented.
   - Print progress and completion messages clearly.
 - **Dependencies:**
-  - Use only available libraries.
-  - If external packages are required, list them in the `"imports"` field.
+  - If external packages are required, list them in the `"imports"` field which are not build-in packages.
 - **Output:**
   - Always return readable, structured JSON output (see below).
 

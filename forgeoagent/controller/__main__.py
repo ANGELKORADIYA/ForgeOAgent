@@ -11,5 +11,5 @@ print_available_inquirers()
 # )
 
 # print(
-save_last_executor()
+# save_last_executor()
 # )

@@ -15,11 +15,8 @@ from forgeoagent.clients.gemini_engine import GeminiAPIClient
 from google.genai import types
 from google import genai
 import json
-import webbrowser
-import time
 from urllib.parse import quote
 import logging
-import re
 from bs4 import BeautifulSoup
 
 # Configure logging
@@ -102,51 +99,21 @@ class ContentImageFetcher:
         except Exception as e:
             logger.error(f"Error encoding image: {e}")
             return None
-    
-    def launch_browser_and_search_images(self, search_query: str, open_browser: bool = True) -> List[str]:
+  
+    def extract_images_from_page_source(self, search_query: str, max_images: int = 10, start_percentage: float = 30.0) -> List[Dict]:
         """
-        Launch browser and search for images using Google Images.
+        Fetch page source from Google Images and extract image data with source information.
         
-        Args:
-            search_query: The search query/title to search for images
-            open_browser: Whether to open browser for user interaction (default: True)
-            
         Returns:
-            List of image URLs found (from Gemini API results)
+            List of dictionaries containing:
+            - image_data: base64 encoded image or image URL
+            - image_title: title of the image from Google search
+            - source_url: webpage link where the image is from
+            - is_base64: boolean indicating if image_data is base64 or URL
         """
         try:
-            # Prepare Google Images search URL
             search_url = f"https://www.google.com/search?q={quote(search_query)}&tbm=isch"
             
-            if open_browser:
-                logger.info(f"Launching browser for search: {search_query}")
-                webbrowser.open(search_url, new=2)  # new=2 opens in new window
-                logger.info(f"Browser opened with URL: {search_url}")
-            
-            return [search_url]
-            
-        except Exception as e:
-            logger.error(f"Error launching browser: {e}")
-            return []
-    
-    def extract_images_from_page_source(self, search_query: str, max_images: int = 10, start_percentage: float = 30.0) -> List[str]:
-        """
-        Fetch page source from Google Images and extract image links (.jpg, .png).
-        Starts extraction from 30% of the page content and gets up to 10 images.
-        
-        Args:
-            search_query: The search query to search for images
-            max_images: Maximum number of images to extract (default: 10)
-            start_percentage: Percentage of page to start extraction from (default: 30.0)
-            
-        Returns:
-            List of extracted image URLs
-        """
-        try:
-            # Prepare Google Images search URL
-            search_url = f"https://www.google.com/search?q={quote(search_query)}&tbm=isch"
-            
-            # Set headers to mimic a browser
             headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
             }
@@ -158,30 +125,72 @@ class ContentImageFetcher:
             page_source = response.text
             logger.info(f"Page source fetched. Total length: {len(page_source)} characters")
             
-            # Calculate start position (30% of page)
+            # Calculate start position
             start_pos = int(len(page_source) * (start_percentage / 100.0))
             page_section = page_source[start_pos:]
             
-            logger.info(f"Starting extraction from position {start_pos} (30% of page)")
+            soup = BeautifulSoup(page_section, 'html.parser')
             
-            # Extract image URLs ending with .jpg or .png using regex
-            # Pattern to match URLs with .jpg or .png
-            image_pattern = r'https?://[^\s"\'<>]+\.(?:jpg|jpeg|png)(?:\?[^\s"\'<>]*)?'
+            images_data = []
+            seen_urls = set()
             
-            image_urls = re.findall(image_pattern, page_section, re.IGNORECASE)
+            # Find all anchor tags
+            for a_tag in soup.find_all('a', href=True):
+                href = a_tag.get('href', '')
+                
+                # Skip search links
+                if href.startswith('/search?'):
+                    continue
+                
+                # Find img tags within this anchor
+                img_tags = a_tag.find_all('img', src=True)
+                
+                for img_tag in img_tags:
+                    img_src = img_tag.get('src', '')
+                    img_alt = img_tag.get('alt', 'No title available')
+                    
+                    # Create unique key to avoid duplicates
+                    unique_key = f"{href}_{img_src[:50]}"
+                    
+                    if unique_key not in seen_urls:
+                        seen_urls.add(unique_key)
+                        
+                        image_info = {
+                            'image_title': img_alt,
+                            'source_url': href,
+                            'is_base64': False,
+                            'image_data': None
+                        }
+                        
+                        # Check if image src is base64
+                        if img_src.startswith('data:'):
+                            image_info['image_data'] = img_src
+                            image_info['is_base64'] = True
+                            logger.info(f"Found base64 image with title: {img_alt[:50]}...")
+                        else:
+                            # It's a URL, try to convert to base64
+                            base64_image = self.fetch_image_as_base64(img_src)
+                            if base64_image:
+                                image_info['image_data'] = base64_image
+                                image_info['is_base64'] = True
+                                logger.info(f"Converted URL to base64 for: {img_alt[:50]}...")
+                            else:
+                                # Keep as URL if conversion fails
+                                image_info['image_data'] = img_src
+                                image_info['is_base64'] = False
+                                logger.warning(f"Failed to convert, keeping URL for: {img_alt[:50]}...")
+                        
+                        images_data.append(image_info)
+                        
+                        # Stop if we've reached max_images
+                        if len(images_data) >= max_images:
+                            break
+                
+                if len(images_data) >= max_images:
+                    break
             
-            # Remove duplicates while preserving order
-            seen = set()
-            unique_images = []
-            for url in image_urls:
-                if url not in seen:
-                    seen.add(url)
-                    unique_images.append(url)
-                    if len(unique_images) >= max_images:
-                        break
-            
-            logger.info(f"Found {len(unique_images)} unique images from page source")
-            return unique_images
+            logger.info(f"Extracted {len(images_data)} images with source information")
+            return images_data
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching page source: {e}")
@@ -190,93 +199,73 @@ class ContentImageFetcher:
             logger.error(f"Error extracting images from page source: {e}")
             return []
     
-  
-        
+
     def get_title_and_images(
         self, 
         title: str, 
         description: Optional[str] = None,
         convert_to_base64: bool = True,
-        launch_browser: bool = False,
-        fetch_from_page_source: bool = False,
+        fetch_from_gemini: bool = False,
         max_images_from_page: int = 10
     ) -> Dict:
         """
         Get images for a specific title with optional description.
         
-        Args:
-            title: Main title for content
-            description: Additional description (optional)
-            convert_to_base64: Whether to convert images to base64
-            launch_browser: Whether to launch browser for Google Images search
-            fetch_from_page_source: Whether to fetch images from Google Images page source
-            max_images_from_page: Maximum images to extract from page source (default: 10)
-            
         Returns:
-            Dictionary with title, images, and optionally base64 encoded images
+            Dictionary with title, images, source information, and base64 encoded images
         """
-        prompt = f"Title: {title}"
+        search_title = f"Title: {title}"
         if description:
-            prompt += f"\nDescription: {description}"
-        prompt += "\n Give relevant images valid links for this topic from google search "
-        
-        gemini_response = self.client.search_content(prompt=prompt,system_instruction=self.system_prompt)
-        gemini_response = json.loads(gemini_response.replace("```json","").replace("```",""))
-        logger.info(f"Gemini response: {gemini_response}")
-        
-        # Initialize result
-        result = {
-            "response": gemini_response.get("response", ""),
-            "main_title": gemini_response.get("main_title", ""),
-            "images_links": gemini_response.get("images_links", []),
-        }
+            search_title += f"\nDescription: {description}"
+        search_title += "\n Give relevant images valid links for this topic from google search "
+        page_source_images_data = self.extract_images_from_page_source(
+            search_title, 
+            max_images=max_images_from_page,
+            start_percentage=30.0
+        )
+        result = {}
+        # Store structured data
+        result["page_source_images_data"] = page_source_images_data
         
         # Fetch images from page source if requested
-        if fetch_from_page_source:
-            search_title = result.get("main_title", title)
-            logger.info(f"Fetching images from page source for: {search_title}")
-            page_source_images = self.extract_images_from_page_source(
-                search_title, 
-                max_images=max_images_from_page,
-                start_percentage=30.0
-            )
-            result["page_source_images"] = page_source_images
-            result["page_source_count"] = len(page_source_images)
-            logger.info(f"Extracted {len(page_source_images)} images from page source")
-            
-            # Optionally merge with Gemini images
-            result["images_links"].extend(page_source_images)
-            result["images_links"] = list(dict.fromkeys(result["images_links"]))  # Remove duplicates
-        
-        # Launch browser with main_title search if requested
-        if launch_browser:
-            search_title = result.get("main_title", title)
-            logger.info(f"Launching browser to search for: {search_title}")
-            self.launch_browser_and_search_images(search_title, open_browser=True)
-            result["browser_search_url"] = f"https://www.google.com/search?q={quote(search_title)}&tbm=isch"
-        
-        # Convert images to base64 if requested
-        if convert_to_base64:
-            result["images_base64"] = []
-            result["failed_images"] = []
-            
-            for image_url in result["images_links"]:
-                base64_image = self.fetch_image_as_base64(image_url)
-                if base64_image:
-                    result["images_base64"].append(base64_image)
-                else:
-                    result["failed_images"].append(image_url)
+        if fetch_from_gemini:
+            try:
+                gemini_response = self.client.search_content(prompt=search_title,system_instruction=self.system_prompt)
+                gemini_response = json.loads(gemini_response.replace("```json","").replace("```",""))
+                logger.info(f"Gemini response: {gemini_response}")
+                
+                # Initialize result
+                result_gemini = {
+                    "response": gemini_response.get("response", ""),
+                    "main_title": gemini_response.get("main_title", ""),
+                    "images_links": gemini_response.get("images_links", []),
+                }
+                
+                # Convert remaining Gemini images to base64 if requested
+                if convert_to_base64 and result_gemini.get("images_links",[]):
+                    result_gemini["images_base64"] = []
+                    result_gemini["failed_images"] = []
+                    
+                    for image_url in result_gemini["images_links"]:
+                        base64_image = self.fetch_image_as_base64(image_url)
+                        if base64_image:
+                            result_gemini["images_base64"].append(base64_image)
+                        else:
+                            result_gemini["failed_images"].append(image_url)
+
+                result["gemini_response"] = result_gemini
+            except Exception as e:
+                logger.error(f"Error fetching images from Gemini: {e}")
+                result["gemini_response"] = {"error": str(e)}
         
         return result
-    
 
 # Standalone function for quick usage
-def fetch_content_images(
+def test_fetch_content_images(
     title: str,
     description: Optional[str] = None,
     api_keys: Optional[List[str]] = None,
     convert_to_base64: bool = True,
-    launch_browser: bool = True,
     fetch_from_page_source: bool = False,
     max_images_from_page: int = 10
 ) -> Dict:
@@ -288,7 +277,6 @@ def fetch_content_images(
         description: Additional description (optional)
         api_keys: List of Gemini API keys
         convert_to_base64: Whether to convert images to base64
-        launch_browser: Whether to launch browser for Google Images search of main_title
         fetch_from_page_source: Whether to fetch images from Google Images page source (30% start, up to 10 images)
         max_images_from_page: Maximum images to extract from page source (default: 10)
         
@@ -303,8 +291,7 @@ def fetch_content_images(
         title=title, 
         description=description,
         convert_to_base64=convert_to_base64,
-        launch_browser=launch_browser,
-        fetch_from_page_source=fetch_from_page_source,
+        fetch_from_gemini=fetch_from_page_source,
         max_images_from_page=max_images_from_page
     )
     
@@ -312,18 +299,18 @@ def fetch_content_images(
 
 if __name__ == "__main__":
     # Example usage
-    API_KEYS = ["AIzaSyD3IKFXcKGbh8oX6yWz3zkk41iefTMf5z8"]
+    API_KEYS = ["xx"]
     title = "The Beauty of Nature"
     description = "Exploring the wonders of the natural world through stunning imagery."
     
-    result = fetch_content_images(
+    result = test_fetch_content_images(
         title=title,
         description=description,
         api_keys=API_KEYS,
         convert_to_base64=True,
-        launch_browser=True,
-        fetch_from_page_source=True,  # Fetches from page source (30% start, up to 10 images)
-        max_images_from_page=10
+        fetch_from_page_source=False,  # Fetches from page source (30% start, up to 10 images)
+        max_images_from_page=1
     )
     
     print(json.dumps(result, indent=2))
+    print(result.keys())
