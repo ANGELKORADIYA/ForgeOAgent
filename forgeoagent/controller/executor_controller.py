@@ -42,7 +42,7 @@ def save_last_executor(agent_name: str = None):
     return conversation_id
 
 
-def create_master_executor(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None , shell_enabled:bool = False,new_content:bool = False) -> Dict[str, Any]:
+def create_master_executor(api_keys: List[str], user_request: str = None, reference_agent_path: str = None, selected_agent: Dict = None, shell_enabled: bool = False, new_content: bool = False, user_system_instruction: str = None) -> Dict[str, Any]:
     """Create the main agent responsible for generating Python code with interactive agent selection.
     
     Args:
@@ -52,6 +52,7 @@ def create_master_executor(api_keys: List[str], user_request: str = None, refere
         selected_agent: Dictionary containing agent information
         shell_enabled: Whether shell mode is enabled
         new_content: Whether to create new content
+        user_system_instruction: Optional custom user system instruction to append
     """
     print("🚀 AI Agent System")
     print("=" * 60)
@@ -92,6 +93,10 @@ def create_master_executor(api_keys: List[str], user_request: str = None, refere
 
         main_agent_system_intruction = MAIN_AGENT_SYSTEM_INSTRUCTION % {"GEMINI_CLASS_ANALYZER": GEMINI_CLASS_ANALYZER,"MCP_CLASS_ANALYZER": MCP_CLASS_ANALYZER}
 
+        # Merge user custom instruction with base system instruction
+        if user_system_instruction:
+            main_agent_system_intruction += f"\n\n--- EXTRA CUSTOM INSTRUCTIONS ---\n{user_system_instruction}"    
+        
         main_agent = GeminiAPIClient(
             api_keys=api_keys,
             system_instruction=main_agent_system_intruction,

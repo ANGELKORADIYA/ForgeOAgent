@@ -218,6 +218,7 @@ class PromptRequest(BaseModel):
     mode: str = "inquirer"  # inquirer or executor
     new_content: bool = True
     api_key: Optional[str] = None
+    user_system_instruction: Optional[str] = None  # Custom system instruction to append
 
 
 class SaveAgentRequest(BaseModel):
@@ -396,7 +397,8 @@ async def process_prompt_common(
     prompt_type: str,
     context: Optional[str],
     new_content: bool,
-    api_keys: List[str]
+    api_keys: List[str],
+    user_system_instruction: Optional[str] = None
 ) -> str:
     """
     Common prompt processing logic used by both endpoints
@@ -408,6 +410,7 @@ async def process_prompt_common(
         context: Optional context to include
         new_content: Whether to process as new content
         api_keys: List of API keys to use
+        user_system_instruction: Optional custom system instruction to append
     
     Returns:
         Processed result string
@@ -438,7 +441,9 @@ async def process_prompt_common(
                 shell_enabled=True,
                 selected_agent={"agent_name": prompt_type} if prompt_type != "None" else None,
                 reference_agent_path=prompt_type if prompt_type != "None" else None,
-                new_content=new_content
+                new_content=new_content,
+                # EXTRA : For Executor mode not there
+                # user_system_instruction=user_system_instruction
             )
             result = output.strip()
         else:
@@ -448,7 +453,8 @@ async def process_prompt_common(
                 final_text,
                 api_keys,
                 prompt_type,
-                new_content
+                new_content,
+                user_system_instruction
             )
             result = output.strip()
         
@@ -481,7 +487,8 @@ async def process_prompt_with_key(request: PromptRequest):
             prompt_type=request.prompt_type,
             context=request.context,
             new_content=request.new_content,
-            api_keys=api_keys
+            api_keys=api_keys,
+            user_system_instruction=request.user_system_instruction
         )
         
         return ProcessResponse(success=True, result=result)
@@ -509,7 +516,8 @@ async def process_prompt(request: PromptRequest):
             prompt_type=request.prompt_type,
             context=request.context,
             new_content=request.new_content,
-            api_keys=api_keys
+            api_keys=api_keys,
+            user_system_instruction=request.user_system_instruction
         )
         
         return ProcessResponse(success=True, result=result)

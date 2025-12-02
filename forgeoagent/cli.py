@@ -113,7 +113,9 @@ def inquirers():
 @click.argument('text')
 @click.option('--inquirer', '-i', required=True, help='Inquirer/system instruction to use')
 @click.option('--api-keys', envvar='GEMINI_API_KEYS', help='Comma-separated Gemini API keys')
-def prompt(text, inquirer, api_keys):
+@click.option('--system-instruction', '-si', help='Custom system instruction to append')
+@click.option('--system-instruction-file', '-sif', type=click.Path(exists=True), help='File containing custom system instruction')
+def prompt(text, inquirer, api_keys, system_instruction, system_instruction_file):
     """Run a prompt through the specified inquirer"""
     if not api_keys:
         click.echo("❌ Error: GEMINI_API_KEYS environment variable not set")
@@ -121,10 +123,21 @@ def prompt(text, inquirer, api_keys):
     
     api_key_list = [key.strip() for key in api_keys.split(",") if key.strip()]
     
+    # Load system instruction from file if provided
+    user_sys_instruction = system_instruction
+    if system_instruction_file:
+        try:
+            with open(system_instruction_file, 'r', encoding='utf-8') as f:
+                user_sys_instruction = f.read()
+            click.echo(f"📄 Loaded system instruction from: {system_instruction_file}")
+        except Exception as e:
+            click.echo(f"❌ Error reading system instruction file: {e}", err=True)
+            sys.exit(1)
+    
     click.echo(f"🔍 Running inquirer: {inquirer}")
     
     auto_import_inquirers()
-    inquirer_using_selected_system_instructions(text, api_key_list, inquirer)
+    inquirer_using_selected_system_instructions(text, api_key_list, inquirer, user_system_instruction=user_sys_instruction)
 
 
 @cli.command()
@@ -132,7 +145,9 @@ def prompt(text, inquirer, api_keys):
 @click.option('--agent', '-a', default='None', help='Agent/executor type')
 @click.option('--save', '-s', help='Save result as agent with name')
 @click.option('--new', is_flag=True, help='Create new agent')
-def execute(prompt_text, agent, save, new):
+@click.option('--system-instruction', '-si', help='Custom system instruction to append')
+@click.option('--system-instruction-file', '-sif', type=click.Path(exists=True), help='File containing custom system instruction')
+def execute(prompt_text, agent, save, new, system_instruction, system_instruction_file):
     """Execute a prompt using the master executor"""
     api_keys = os.getenv("GEMINI_API_KEYS", "")
     if not api_keys:
@@ -140,6 +155,17 @@ def execute(prompt_text, agent, save, new):
         sys.exit(1)
     
     api_key_list = [key.strip() for key in api_keys.split(",") if key.strip()]
+    
+    # Load system instruction from file if provided
+    user_sys_instruction = system_instruction
+    if system_instruction_file:
+        try:
+            with open(system_instruction_file, 'r', encoding='utf-8') as f:
+                user_sys_instruction = f.read()
+            click.echo(f"📄 Loaded system instruction from: {system_instruction_file}")
+        except Exception as e:
+            click.echo(f"❌ Error reading system instruction file: {e}", err=True)
+            sys.exit(1)
     
     click.echo(f"⚙️  Executing prompt...")
     
@@ -152,7 +178,8 @@ def execute(prompt_text, agent, save, new):
             shell_enabled=True,
             selected_agent={"agent_name": agent},
             reference_agent_path=agent,
-            new_content=new
+            new_content=new,
+            user_system_instruction=user_sys_instruction
         )
         
         if save:
@@ -168,8 +195,9 @@ def config():
     """Show ForgeOAgent configuration and environment"""
     click.echo("\n🔧 ForgeOAgent Configuration:")
     click.echo(f"  API Keys configured: {'✓' if os.getenv('GEMINI_API_KEYS') else '✗'}")
-    click.echo(f"  Home directory: {Path.home()}")
-    click.echo(f"  Config directory: {Path.home() / '.forgeagent'}")
+    repo_root = os.path.dirname(os.path.abspath(__file__))
+    log_dir = Path(repo_root + '/logs').resolve()
+    click.echo(f"  Log directory: {log_dir}")
 
 
 @cli.command()
@@ -185,7 +213,7 @@ def shortcut(target, name, hotkey):
     repo_root = os.path.dirname(os.path.abspath(__file__))
     if os.name == 'nt' or sys.platform.startswith('win'):
         # Windows: call the PowerShell script we added
-        ps1 = Path(repo_root + '/../shell/windows/create_shortcut.ps1').resolve()
+        ps1 = Path(repo_root + '/shell/windows/create_shortcut.ps1').resolve()
         if not ps1.exists():
             click.echo(f"❌ PowerShell helper not found at {ps1}")
             sys.exit(1)

@@ -33,8 +33,16 @@ def auto_import_inquirers(package_path="mcp.system_prompts"):
                 # print(f"✗ Failed to import {module_name}: {e}")
                 pass
 
-def inquirer_using_selected_system_instructions(input_text: str, api_keys: List[str], prompt_agent: str,new_content:bool=False):
-    """Run Gemini API prompt improvement using the given system instruction."""
+def inquirer_using_selected_system_instructions(input_text: str, api_keys: List[str], prompt_agent: str, new_content: bool = False, user_system_instruction: str = None):
+    """Run Gemini API prompt improvement using the given system instruction.
+    
+    Args:
+        input_text: The input text to process
+        api_keys: List of API keys
+        prompt_agent: The prompt agent/system instruction to use
+        new_content: Whether to create new content
+        user_system_instruction: Optional custom user system instruction to append
+    """
     prompt_agent = prompt_agent.strip().upper()
     if not prompt_agent.endswith("_SYSTEM_INSTRUCTION"):
         prompt_agent += "_SYSTEM_INSTRUCTION"
@@ -43,9 +51,13 @@ def inquirer_using_selected_system_instructions(input_text: str, api_keys: List[
         print(f"[ERROR] No system instruction found for: {prompt_agent}")
         return
 
+    # Merge user custom instruction with base system instruction
+    if user_system_instruction:
+        system_prompt += f"\n\n--- EXTRA CUSTOM INSTRUCTIONS ---\n{user_system_instruction}"    
+
     prompt_agent = prompt_agent.replace("_SYSTEM_INSTRUCTION", "")
     user_enhance = globals().get(f"{prompt_agent}_USER_INSTRUCTION", "```user_input")
     query = f"{user_enhance} {input_text}```"
-    main_agent = GeminiAPIClient(api_keys=api_keys,new_content=new_content,system_instruction=system_prompt)
+    main_agent = GeminiAPIClient(api_keys=api_keys, new_content=new_content, system_instruction=system_prompt)
     response = main_agent.search_content(query)
     print(response)

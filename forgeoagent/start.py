@@ -21,7 +21,6 @@ try:
         print_available_executors,
         auto_import_inquirers,
         GeminiAPIClient,
-        AgentManager,
         create_master_executor,
         save_last_executor
     )
@@ -122,6 +121,24 @@ class PromptProcessorFrame(wx.Frame):
         
         main_sizer.Add(input_sizer, 1, wx.ALL | wx.EXPAND, 5)
         
+        # Custom System Instruction section
+        sys_inst_box = wx.StaticBox(panel, label="Custom System Instruction (Optional)")
+        sys_inst_sizer = wx.StaticBoxSizer(sys_inst_box, wx.VERTICAL)
+        
+        sys_inst_btn_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.load_sys_inst_btn = wx.Button(panel, label="Load from File")
+        self.clear_sys_inst_btn = wx.Button(panel, label="Clear")
+        
+        sys_inst_btn_sizer.Add(self.load_sys_inst_btn, 0, wx.ALL, 5)
+        sys_inst_btn_sizer.Add(self.clear_sys_inst_btn, 0, wx.ALL, 5)
+        
+        sys_inst_sizer.Add(sys_inst_btn_sizer, 0, wx.EXPAND)
+        
+        self.sys_inst_text = wx.TextCtrl(panel, style=wx.TE_MULTILINE, size=(-1, 80))
+        sys_inst_sizer.Add(self.sys_inst_text, 1, wx.ALL | wx.EXPAND, 5)
+        
+        main_sizer.Add(sys_inst_sizer, 0, wx.ALL | wx.EXPAND, 5)
+        
         # Processing options
         options_box = wx.StaticBox(panel, label="Processing Options")
         options_sizer = wx.StaticBoxSizer(options_box, wx.HORIZONTAL)
@@ -153,6 +170,8 @@ class PromptProcessorFrame(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.on_load_file, self.load_file_btn)
         self.Bind(wx.EVT_BUTTON, self.on_get_clipboard, self.get_clipboard_btn)
         self.Bind(wx.EVT_BUTTON, self.on_clear_context, self.clear_context_btn)
+        self.Bind(wx.EVT_BUTTON, self.on_load_sys_inst, self.load_sys_inst_btn)
+        self.Bind(wx.EVT_BUTTON, self.on_clear_sys_inst, self.clear_sys_inst_btn)
         self.Bind(wx.EVT_BUTTON, self.on_process, self.process_btn)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_mode_change, self.mode_inquirer)
         self.Bind(wx.EVT_RADIOBUTTON, self.on_mode_change, self.mode_executor)
@@ -253,6 +272,27 @@ class PromptProcessorFrame(wx.Frame):
         """Clear the context text"""
         self.context_text.SetValue("")
         self.status_bar.SetStatusText("Context cleared")
+    
+    def on_load_sys_inst(self, event):
+        """Load system instruction from file"""
+        with wx.FileDialog(self, "Choose a system instruction file",
+                          wildcard="Text files (*.txt)|*.txt|All files (*.*)|*.*",
+                          style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dlg:
+            
+            if dlg.ShowModal() == wx.ID_OK:
+                file_path = dlg.GetPath()
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    self.sys_inst_text.SetValue(content)
+                    self.status_bar.SetStatusText(f"Loaded system instruction: {file_path}")
+                except Exception as e:
+                    wx.MessageBox(f"Error reading file: {e}", "Error", wx.OK | wx.ICON_ERROR)
+    
+    def on_clear_sys_inst(self, event):
+        """Clear the system instruction text"""
+        self.sys_inst_text.SetValue("")
+        self.status_bar.SetStatusText("System instruction cleared")
         
     def on_process(self, event):
         """Process the prompt"""
@@ -273,6 +313,7 @@ class PromptProcessorFrame(wx.Frame):
         # Prepare the input
         context_text = self.context_text.GetValue().strip()
         selected_type = self.prompt_choice.GetStringSelection()
+        user_sys_inst = self.sys_inst_text.GetValue().strip() or None
         
         # Format final text
         if context_text:
@@ -286,11 +327,11 @@ class PromptProcessorFrame(wx.Frame):
         
         # Run processing in background thread
         thread = threading.Thread(target=self.process_in_background, 
-                                args=(final_text, selected_type))
+                                args=(final_text, selected_type, user_sys_inst))
         thread.daemon = True
         thread.start()
         
-    def process_in_background(self, final_text, selected_type):
+    def process_in_background(self, final_text, selected_type, user_sys_inst):
         """Process the prompt in background thread"""
         try:
             new_content = self.new_content_cb.GetValue()
@@ -299,14 +340,8 @@ class PromptProcessorFrame(wx.Frame):
             if self.mode_executor.GetValue():
                 # Executor mode - use create_master_executor function
                 try:
-                    agent_manager = AgentManager()
-                    prompt_text_path = None
-                    
-                    if selected_type and selected_type != "None":
-                        try:
-                            prompt_text_path = agent_manager.get_agent_path(selected_type)
-                        except:
-                            prompt_text_path = None
+                    # Pass selected_type as reference_agent_path - create_master_executor will resolve it
+                    reference_agent_path = selected_type if selected_type and selected_type != "None" else None
                     
                     # Capture output from create_master_executor
                     output, _ = self.capture_print_output(
@@ -315,8 +350,9 @@ class PromptProcessorFrame(wx.Frame):
                         final_text,
                         shell_enabled=True,
                         selected_agent={"agent_name": selected_type} if selected_type != "None" else None,
-                        reference_agent_path=prompt_text_path,
-                        new_content=new_content
+                        reference_agent_path=reference_agent_path,
+                        new_content=new_content,
+                        user_system_instruction=user_sys_inst
                     )
                     
                     result = output.strip()
@@ -331,7 +367,8 @@ class PromptProcessorFrame(wx.Frame):
                         final_text,
                         self.api_keys,
                         selected_type,
-                        new_content
+                        new_content,
+                        user_sys_inst
                     )
                     result = output.strip()
                 except Exception as e:
@@ -448,7 +485,7 @@ class ResultDialog(wx.Dialog):
         
         dlg.Destroy()
 
-
+class PromptProcessorApp(wx.App):
     def OnInit(self):
         frame = PromptProcessorFrame()
         frame.Show()
