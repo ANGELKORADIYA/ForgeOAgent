@@ -17,7 +17,7 @@ from fastapi import BackgroundTasks
 import time
 import secrets
 
-from forgeoagent.web.services.content_fetcher import ContentImageFetcher, test_fetch_content_images
+from forgeoagent.web.services.content_fetcher import ContentImageFetcher, fetch_content_images
 
 # Add the parent directories to sys.path
 current_dir = Path(__file__).parent.resolve()
@@ -236,12 +236,16 @@ class ContentImageRequest(BaseModel):
     convert_to_base64: bool = True
     api_key: Optional[str] = None
     gemini_enabled: bool = False
+    max_images_from_page: int = 5
 
 
 class ContentImageResponse(BaseModel):
     success: bool
     page_source_images_data: Any = None
     gemini_response: Any = None
+    browser_images_data: Any = None
+    all_images_data: Any = None
+    all_images_links: Any = None
     error: Optional[str] = None
 
 @app.post("/api/content-images-with-key", response_model=ContentImageResponse)
@@ -270,21 +274,25 @@ async def get_content_images_with_key(request: ContentImageRequest):
     try:
         # Create fetcher instance
         fetcher = ContentImageFetcher(
-            api_keys=api_keys,
+            gemini_api_keys=api_keys,
         )
         
         # Get content with images
-        result = fetcher.get_title_and_images(
-            title=request.title,
-            description=request.description,
+        result = fetcher.fetch_images_for_content(
+            content_title=request.title,
+            content_description=request.description,
             convert_to_base64=request.convert_to_base64,
-            fetch_from_gemini=request.gemini_enabled
+            use_gemini_api=request.gemini_enabled,
+            max_images_per_source=request.max_images_from_page
         )
         
         return ContentImageResponse(
             success=True,
-            page_source_images_data=result.get("page_source_images_data"),
+            page_source_images_data=result.get("images_data") if result.get("extraction_method") == "page_source" else None,
             gemini_response=result.get("gemini_response"),
+            browser_images_data=result.get("images_data") if result.get("extraction_method") == "browser" else None,
+            all_images_data=result.get("all_images_data"),
+            all_images_links=result.get("all_images_links"),
         )
     
     except Exception as e:
@@ -318,21 +326,25 @@ async def get_content_images(request: ContentImageRequest):
     try:
         # Create fetcher instance
         fetcher = ContentImageFetcher(
-            api_keys=api_keys,
+            gemini_api_keys=api_keys,
         )
         
         # Get content with images
-        result = fetcher.get_title_and_images(
-            title=request.title,
-            description=request.description,
+        result = fetcher.fetch_images_for_content(
+            content_title=request.title,
+            content_description=request.description,
             convert_to_base64=request.convert_to_base64,
-            fetch_from_gemini=request.gemini_enabled
+            use_gemini_api=request.gemini_enabled,
+            max_images_per_source=request.max_images_from_page
         )
         
         return ContentImageResponse(
             success=True,
-            page_source_images_data=result.get("page_source_images_data"),
+            page_source_images_data=result.get("images_data") if result.get("extraction_method") == "page_source" else None,
             gemini_response=result.get("gemini_response"),
+            browser_images_data=result.get("images_data") if result.get("extraction_method") == "browser" else None,
+            all_images_data=result.get("all_images_data"),
+            all_images_links=result.get("all_images_links"),
         )
     
     except Exception as e:
