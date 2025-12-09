@@ -247,6 +247,7 @@ class ContentImageResponse(BaseModel):
     all_images_data: Any = None
     all_images_links: Any = None
     error: Optional[str] = None
+    extraction_method: Optional[str] = None
 
 @app.post("/api/content-images-with-key", response_model=ContentImageResponse)
 async def get_content_images_with_key(request: ContentImageRequest):
@@ -293,6 +294,7 @@ async def get_content_images_with_key(request: ContentImageRequest):
             browser_images_data=result.get("images_data") if result.get("extraction_method") == "browser" else None,
             all_images_data=result.get("all_images_data"),
             all_images_links=result.get("all_images_links"),
+            extraction_method=result.get("extraction_method")
         )
     
     except Exception as e:
@@ -345,6 +347,7 @@ async def get_content_images(request: ContentImageRequest):
             browser_images_data=result.get("images_data") if result.get("extraction_method") == "browser" else None,
             all_images_data=result.get("all_images_data"),
             all_images_links=result.get("all_images_links"),
+            extraction_method=result.get("extraction_method")
         )
     
     except Exception as e:

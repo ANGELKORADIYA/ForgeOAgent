@@ -4,7 +4,9 @@ Content Image Fetcher Service
 
 This module provides functionality to fetch content with images using multiple sources:
 - Browser automation (Playwright) for high-quality images with automatic fallback
-- Page source parsing for fast, lightweight extraction
+  - Primary: Google Images
+  - Secondary: Bing Images (fallback when Google fails)
+- Page source parsing for fast, lightweight extraction (final fallback)
 - Gemini API for AI-powered image suggestions (optional)
 
 File: services/content_fetcher.py
@@ -17,7 +19,7 @@ from forgeoagent.clients.gemini_engine import GeminiAPIClient
 from google.genai import types
 from google import genai
 import json
-from urllib.parse import quote
+from urllib.parse import quote, urlparse, parse_qs, unquote
 import logging
 from bs4 import BeautifulSoup
 import asyncio
@@ -30,11 +32,14 @@ logger = logging.getLogger(__name__)
 class ContentImageFetcher:
     """
     Unified image fetcher that combines multiple extraction methods:
-    - Browser automation (high quality, with automatic fallback)
-    - Page source parsing (fast, lightweight)
+    - Browser automation (high quality, with automatic three-tier fallback)
+      1. Google Images (primary)
+      2. Bing Images (secondary fallback)
+      3. Page source parsing (final fallback)
     - Gemini API (AI-powered suggestions, optional)
     
-    Automatically tries browser extraction first, falls back to page source if it fails.
+    Automatically tries Google Images first, falls back to Bing if Google fails,
+    and finally falls back to page source parsing if both browser methods fail.
     Supports downloading images and converting them to base64 format.
     """
     
@@ -446,6 +451,109 @@ class ContentImageFetcher:
             logger.error(f"Error extracting images from page source: {e}")
             return []
     
+    def extract_images_from_bing_page_source(
+        self,
+        search_query: str,
+        max_image_count: int = 10
+    ) -> List[Dict]:
+        """
+        Fetch Bing Images page source and extract high-quality image URLs with metadata.
+        
+        This method uses HTTP requests (no Playwright required) to fetch Bing's HTML and
+        extracts image data from JSON metadata stored in anchor tag attributes.
+        
+        Args:
+            search_query: The search query for Bing Images
+            max_image_count: Maximum number of images to extract
+        
+        Returns:
+            List of dictionaries containing:
+                - image_data: base64 encoded image or image URL
+                - image_title: title/alt text of the image from Bing search
+                - source_url: webpage link where the image originates from
+                - is_base64: boolean indicating if image_data is base64 encoded or a URL
+        """
+        try:
+            search_url = f"https://www.bing.com/images/search?q={quote(search_query)}"
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            logger.info(f"Fetching Bing page source from: {search_url}")
+            response = requests.get(search_url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            page_html_content = response.text
+            logger.info(f"Bing page source fetched. Total length: {len(page_html_content)} characters")
+            
+            soup = BeautifulSoup(page_html_content, 'html.parser')
+            
+            # Find all image links with metadata
+            image_links = soup.find_all('a', class_='iusc')
+            logger.info(f"Found {len(image_links)} Bing image links with metadata")
+            
+            extracted_images_data = []
+            
+            for image_link in image_links[:max_image_count]:
+                try:
+                    # Extract JSON metadata from 'm' attribute
+                    m_attribute = image_link.get('m')
+                    if not m_attribute:
+                        continue
+                    
+                    # Parse JSON data
+                    metadata = json.loads(m_attribute)
+                    
+                    # Extract high-quality image URL
+                    image_url = metadata.get('murl')  # Media URL (full resolution)
+                    image_title = metadata.get('t', 'No title')
+                    source_url = metadata.get('purl', '')  # Page URL
+                    
+                    if not image_url:
+                        continue
+                    
+                    logger.info(f"Found Bing image: {image_title[:50]}...")
+                    logger.info(f"  URL: {image_url[:80]}...")
+                    
+                    image_metadata = {
+                        'image_title': image_title,
+                        'source_url': source_url,
+                        'is_base64': False,
+                        'image_data': image_url
+                    }
+                    
+                    # Try to convert to base64
+                    base64_image_data = self.download_image_as_base64(image_url)
+                    if base64_image_data:
+                        image_metadata['image_data'] = base64_image_data
+                        image_metadata['is_base64'] = True
+                        logger.info(f"  Converted to base64")
+                    else:
+                        logger.warning(f"  Failed to convert, keeping URL")
+                    
+                    extracted_images_data.append(image_metadata)
+                    
+                    if len(extracted_images_data) >= max_image_count:
+                        break
+                        
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse image metadata JSON: {e}")
+                    continue
+                except Exception as e:
+                    logger.warning(f"Error processing Bing image: {e}")
+                    continue
+            
+            logger.info(f"Extracted {len(extracted_images_data)} images from Bing page source")
+            return extracted_images_data
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching Bing page source: {e}")
+            return []
+        except Exception as e:
+            logger.error(f"Error extracting images from Bing page source: {e}")
+            return []
+    
     def _fetch_images_from_gemini_api(
         self,
         search_query: str,
@@ -510,12 +618,13 @@ class ContentImageFetcher:
         run_browser_headless: bool = True
     ) -> Dict:
         """
-        Fetch images for specific content using multiple sources with automatic fallback.
+        Fetch images for specific content using multiple sources with automatic three-tier fallback.
         
         Extraction strategy:
-        1. Try browser automation (high quality) first
-        2. If browser fails, automatically fallback to page source parsing (fast)
-        3. Optionally fetch AI-powered suggestions from Gemini API
+        1. Try Google Images browser automation (high quality) first
+        2. If Google fails, try Bing Images browser automation (high quality)
+        3. If both browser methods fail, fallback to page source parsing (fast)
+        4. Optionally fetch AI-powered suggestions from Gemini API
         
         Args:
             content_title: Main title for the content
@@ -528,7 +637,7 @@ class ContentImageFetcher:
         Returns:
             Dictionary containing:
                 - images_data: List of images (from browser or page source fallback)
-                - extraction_method: 'browser' or 'page_source' indicating which method succeeded
+                - extraction_method: 'google_browser', 'bing_browser', or 'page_source' indicating which method succeeded
                 - gemini_response: Gemini API response with image suggestions (if enabled)
                 - all_images_data: Combined list of all base64 encoded images
                 - all_images_links: Combined list of all image URLs
@@ -544,9 +653,12 @@ class ContentImageFetcher:
         # Update browser headless setting
         self.headless = run_browser_headless
         
-        # Try browser extraction first, fallback to page source on failure
+        # Two-tier fallback strategy:
+        # 1. Try Google Images (browser automation with Playwright)
+        # 2. If Google fails, try Bing Images (HTTP requests, no Playwright required)
+        # 3. If Bing fails, fallback to Google page source parsing
         try:
-            logger.info("Attempting browser-based image extraction...")
+            logger.info("Attempting Google Images browser-based extraction...")
             browser_images = self._extract_images_with_browser_sync(
                 search_query=search_query,
                 max_image_count=max_images_per_source
@@ -571,29 +683,48 @@ class ContentImageFetcher:
                         if base64_image_data:
                             image_metadata['image_data'] = base64_image_data
                             image_metadata['is_base64'] = True
-                            logger.info(f"Converted browser image to base64: {image_title[:50]}...")
+                            logger.info(f"Converted Google image to base64: {image_title[:50]}...")
                         else:
                             logger.warning(f"Failed to convert to base64, keeping URL: {image_title[:50]}...")
                     
                     images_data.append(image_metadata)
                 
-                extraction_method = 'browser'
-                logger.info(f"Browser extraction successful: {len(images_data)} images")
+                extraction_method = 'google_browser'
+                logger.info(f"Google browser extraction successful: {len(images_data)} images")
             else:
-                raise Exception("Browser extraction returned no images")
+                raise Exception("Google browser extraction returned no images")
                 
-        except Exception as e:
-            logger.warning(f"Browser extraction failed: {e}. Falling back to page source extraction...")
+        except Exception as google_error:
+            logger.warning(f"Google browser extraction failed: {google_error}")
             
-            # Fallback to page source extraction
-            search_query_with_hint = search_query + "\n Give relevant images valid links for this topic from google search "
-            images_data = self.extract_images_from_google_page_source(
-                search_query_with_hint, 
-                max_image_count=max_images_per_source,
-                page_start_percentage=30.0
-            )
-            extraction_method = 'page_source'
-            logger.info(f"Page source extraction completed: {len(images_data)} images")
+            # Try Bing Images HTTP extraction (no Playwright required)
+            try:
+                logger.info("Falling back to Bing Images HTTP extraction (no Playwright)...")
+                bing_images = self.extract_images_from_bing_page_source(
+                    search_query=search_query,
+                    max_image_count=max_images_per_source
+                )
+                
+                if bing_images:
+                    images_data = bing_images
+                    extraction_method = 'bing_http'
+                    logger.info(f"Bing HTTP extraction successful: {len(images_data)} images")
+                else:
+                    raise Exception("Bing HTTP extraction returned no images")
+                    
+            except Exception as bing_error:
+                logger.warning(f"Bing HTTP extraction failed: {bing_error}")
+                logger.info("Falling back to Google page source extraction...")
+                
+                # Final fallback to Google page source extraction
+                search_query_with_hint = search_query + "\n Give relevant images valid links for this topic from google search "
+                images_data = self.extract_images_from_google_page_source(
+                    search_query_with_hint, 
+                    max_image_count=max_images_per_source,
+                    page_start_percentage=30.0
+                )
+                extraction_method = 'google_page_source'
+                logger.info(f"Google page source extraction completed: {len(images_data)} images")
         
         result["images_data"] = images_data
         result["extraction_method"] = extraction_method
@@ -642,7 +773,8 @@ def fetch_content_images(
     """
     Standalone function to fetch and convert images for given content.
     
-    Automatically tries browser extraction first, falls back to page source if it fails.
+    Automatically tries Google Images first, falls back to Bing Images if Google fails,
+    and finally falls back to page source parsing if both browser methods fail.
     
     Args:
         content_title: Main title for the content
@@ -675,13 +807,13 @@ def fetch_content_images(
     return result
 
 if __name__ == "__main__":
-    # Example usage with automatic fallback
+    # Example usage with automatic three-tier fallback (Google → Bing → Page Source)
     API_KEYS = ["xx"]
     title = "nature photography"
     description = "Stunning landscapes and wildlife photography"
     
     print("=" * 80)
-    print("AUTOMATIC EXTRACTION (Browser with Page Source Fallback)")
+    print("AUTOMATIC EXTRACTION (Google → Bing → Page Source Fallback)")
     print("=" * 80)
     result = fetch_content_images(
         content_title=title,
