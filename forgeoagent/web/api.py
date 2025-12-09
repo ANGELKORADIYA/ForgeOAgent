@@ -248,6 +248,8 @@ class ContentImageResponse(BaseModel):
     all_images_links: Any = None
     error: Optional[str] = None
     extraction_method: Optional[str] = None
+    bing_page_source_images_data: Any = None
+
 
 @app.post("/api/content-images-with-key", response_model=ContentImageResponse)
 async def get_content_images_with_key(request: ContentImageRequest):
@@ -292,6 +294,7 @@ async def get_content_images_with_key(request: ContentImageRequest):
             page_source_images_data=result.get("images_data") if result.get("extraction_method") == "page_source" else None,
             gemini_response=result.get("gemini_response"),
             browser_images_data=result.get("images_data") if result.get("extraction_method") == "browser" else None,
+            bing_page_source_images_data=result.get("bing_http") if result.get("extraction_method") == "bing_http" else None,
             all_images_data=result.get("all_images_data"),
             all_images_links=result.get("all_images_links"),
             extraction_method=result.get("extraction_method")
@@ -347,7 +350,8 @@ async def get_content_images(request: ContentImageRequest):
             browser_images_data=result.get("images_data") if result.get("extraction_method") == "browser" else None,
             all_images_data=result.get("all_images_data"),
             all_images_links=result.get("all_images_links"),
-            extraction_method=result.get("extraction_method")
+            extraction_method=result.get("extraction_method"),
+            bing_page_source_images_data=result.get("bing_http") if result.get("extraction_method") == "bing_http" else None,
         )
     
     except Exception as e:
