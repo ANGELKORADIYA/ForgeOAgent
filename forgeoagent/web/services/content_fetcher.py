@@ -23,8 +23,11 @@ from urllib.parse import quote, urlparse, parse_qs, unquote
 import logging
 from bs4 import BeautifulSoup
 import asyncio
-from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
 
+try:
+    from playwright.async_api import async_playwright, Browser, Page, TimeoutError as PlaywrightTimeoutError
+except ImportError:
+    print("Playwright is not installed. Please install it with 'pip install playwright' and run 'playwright install'.")
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
