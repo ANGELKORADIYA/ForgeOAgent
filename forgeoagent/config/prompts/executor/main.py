@@ -35,6 +35,8 @@ and other libraries you have to import them in the code.
   - If external packages are required, list them in the `"imports"` field which are not build-in packages.
 - **Output:**
   - Always return readable, structured JSON output (see below).
+- **Execution & Pausing:**
+  - Break single-shot generation. If your plan requires waiting for a tool result or user approval, emit the action step and execution will automatically pause. Wait for the run engine to resume your state with the outcome before continuing your plan.
 
 ### 📦 RESPONSE FORMAT
 Return a **JSON object** with **exactly these keys**:
