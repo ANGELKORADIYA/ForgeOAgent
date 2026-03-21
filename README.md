@@ -4,123 +4,104 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
 > **Intelligent automation for everyone:**  
-> Use Gemini and custom agents to improve prompts, enhance text, refine code, generate emails, and automate tasks.
+> Use Gemini, OpenAI, Anthropic, or Ollama to power custom agents to improve prompts, enhance text, refine code, generate emails, and automate tasks safely.
 
-ForgeOAgent is a modular Python framework for building, managing, and running AI agents with advanced code processing capabilities. It automates code improvement, agent management, and client integration using Google Gemini and other APIs.
+ForgeOAgent is a modular Python framework for building, managing, and running AI agents with advanced code processing capabilities. It coordinates complex tasks using a state-machine orchestrator featuring secure auto-pausing for task approvals.
 
 ---
 
 ## 🚀 Key Features
 
-- **Cross-platform shell support:** Works on Windows & Linux.
+- **Multi-Provider Support:** Easily switch between Gemini, OpenAI, Anthropic, and local Ollama.
+- **Robust Execution Engine:** A safe, state-machine driven orchestrator that auto-pauses for human approval on high-risk filesystem and shell operations.
 - **Flexible agent modes:**  
-	- *Inquirer Mode*: Use system prompts for quick tasks.  
-	- *Executor Mode*: Advanced workflows, agent management, and context-aware automation.
-- **Customizable prompts:** Easily add your own system instructions for new agent behaviors in `mcp/system_prompts/`
-- **Persistent chat history:** Optionally load recent conversations for better context and accuracy.
-- **Automatic tool integration:** Place Python classes in `mcp/tools` to auto-expose new agent capabilities.
-- **Comprehensive logging:** All agent activities and improvements are logged for review.
+  - *Inquirer Mode*: Instant execution of system prompts for quick generation tasks.  
+  - *Executor Mode*: Deep agent workflows that dynamically decompose tasks, use tools, and execute Python code.
+- **Customizable prompts:** Easily add your own system instructions as Python modules in `forgeoagent/tools/system_prompts/`.
+- **Fast Desktop Launcher:** A lightweight, spotlight-style GUI to instantly trigger tasks from your system tray.
 
 ---
 
 ## 📁 Project Structure
 
-- `start.py` — GUI entry point for the agent system.
-- `main.py` — Command-line entry point for running agents and workflows.
-- `agents/` — Agent modules and metadata.
-- `clients/` — API clients for external services (e.g., Gemini).
-- `core/` — Core utilities for agent management, API keys, configuration, and more.
-- `logs/` — JSONL logs of agent activities and improvements.
-- `shell/` — Shell scripts for Linux and Windows environments.
-- `mcp/` — System prompts, agent context, and tools for modular extension.
-
-
-> UseFul :
-- GeminiAPIClient().generate_content
-- GeminiAPIClient().search_content
-- from forgeoagent.controller.executor_controller import create_master_executor
-
-> use :
-
-- from forgeoagent.controller.executor_controller import print_available_executors , save_last_executor
-- from forgeoagent.controller.inquirer_controller import inquirer_using_selected_system_instructions , print_available_inquirers , auto_import_inquirers
+- `forgeoagent/cli/main.py` — Command-line interface for running agents and commands.
+- `forgeoagent/gui/app.py` — Entry point for the fast, lightweight desktop launcher.
+- `forgeoagent/web/main.py` — Fast API web server interface.
+- `forgeoagent/providers/` — Adapter interfaces for Gemini, OpenAI, Anthropic, and Ollama.
+- `forgeoagent/orchestration/` — Auto-pausing execution engine and state machine checkpoints.
+- `forgeoagent/tools/` — Modular system prompts (`system_prompts/`) and external integrations (`implementations/`).
+- `forgeoagent/config/settings.py` — Pydantic typed application settings.
 
 ---
 
 ## 🛠️ Getting Started
 
 1. **Clone the repository**
-	 ```sh
-	 git clone https://github.com/ANGELKORADIYA/ForgeOAgent.git
-	 cd ForgeOAgent
-	 ```
+   ```sh
+   git clone https://github.com/ANGELKORADIYA/ForgeOAgent.git
+   cd ForgeOAgent
+   ```
 
 2. **Install dependencies**
-	 ```sh
-	 pip install -r requirements.txt
-	 ```
+   ```sh
+   pip install -r requirements.txt
+   ```
 
 3. **Configure API keys**
-	 - Copy `.env.production` to `.env` and add your Gemini API keys.
+   - Copy `.env.production` (or create `.env`) and add your respective `GEMINI_API_KEYS`, `OPENAI_API_KEY` etc.
 
-4. **Run the agent system**
-	 ```sh
-	 python main.py
-	 ```
-	 - List available system prompts:  
-		 `python main.py -l`
-	 - Run with a specific prompt:  
-		 `python main.py -p <prompt_type> "your prompt here"`
-	 - Use main mode (with agent context):  
-		 `python main.py "your prompt here" --main`
+4. **Run locally using Python**
+   - Launching the new GUI:
+     ```sh
+     python forgeoagent/gui/app.py
+     ```
+   - Using the CLI:
+     ```sh
+     python forgeoagent/cli/main.py
+     ```
 
-5. **Assign a shortcut for quick access**
-	 - **Linux:**  
-		 Add a keyboard shortcut to run `shell/linux/start.sh`.
-	 - **Windows:**  
-		 Create a desktop shortcut to `shell/windows/start.vbs`.
+5. **Building the Windows Executable (.exe)**
+   - Run the PowerShell build script:
+     ```powershell
+     .\scripts\build_windows.ps1
+     ```
+   - The compiled app will be placed in the `dist/` directory.
 
 ---
 
-## 💡 Usage Examples
+## ⚠️ Troubleshooting: Windows Smart App Control (.exe Blocked)
 
-- **Quick prompt improvement:**  
-	Use Inquirer Mode to enhance text, code, or emails with a single command.
-- **Context-aware automation:**  
-	Use Executor Mode to leverage previous conversations and agent context for more complex tasks.
+When you compile ForgeOAgent using PyInstaller (via `build_windows.ps1`) and try to run the `.exe`, you might encounter a blue **Smart App Control** window stating:
+> *"Smart App Control blocked an app that may be unsafe... because we can't confirm who wrote it."*
 
+This is a common security feature on Windows 11 designed to block **unsigned executables** created by packaging tools like PyInstaller. Because the `.exe` doesn't have a publisher certificate, Windows treats it suspiciously.
+
+### Solutions:
+**Option 1: Run via Python (Recommended for Development)**
+Avoid the `.exe` entirely and run the app straight from source using your python environment:
+```sh
+python forgeoagent/gui/app.py
+```
+
+**Option 2: Add a Folder Exclusion**
+You can whitelist the folder where your `.exe` is located from Windows Security to bypass the check.
+1. Open **Windows Security** > **Virus & threat protection**.
+2. Click **Manage settings** under *Virus & threat protection settings*.
+3. Scroll down to **Exclusions** and click **Add or remove exclusions**.
+4. Click **Add an exclusion** -> **Folder** and select the `ForgeOAgent/dist` folder.
+
+**Option 3: Disable Smart App Control (Not Recommended)**
+You can turn off Smart App Control globally in Windows Security, but this lowers your system's overall protection against malware across the board.
+
+*(Note: To permanently fix this warning for public distribution, the `.exe` must be cryptographically signed using a paid Code-Signing Certificate from a Trusted Certificate Authority).*
 
 ---
 
 ## ⚙️ Customization
 
-- **Add new system prompts:**  
-	Place your custom prompt as a Python constant in `mcp/system_prompts/` (naming: `*_SYSTEM_INSTRUCTION`).
-- **Integrate new clients:**  
-	Add API clients in `clients/`.
-- **Review logs:**  
-	Check `logs/` for detailed agent activity and improvements.
-- **Main Agent Reuse:**
-   Save Result
----
-
-## 🧩 Creating Custom Agents & Shortcuts
-
-1. **Add your prompt:**  
-	 Create a new file in `mcp/system_prompts/` and define a constant ending with `_SYSTEM_INSTRUCTION`.
-2. **Create a shortcut script:**  
-	 Use `.sh` (Linux) or `.vbs` (Windows) to call the agent with your prompt type.
-
-Now you can trigger your custom agent instantly via your shortcut.
-
----
-
-## 📝 Example: Improving Code Files
-
-- Recursively process files in a directory (skipping `.git`).
-- Use Gemini agents to improve code or text based on file extension.
-- Improved files are saved in the current directory.
-- See `agents/temp_3/main_agent.jsonl` for a sample agent log and code.
+- **Add new system prompts:** Place your custom prompt as a Python constant in `forgeoagent/tools/system_prompts/`.
+- **Integrate new clients:** Add API adapters in `forgeoagent/providers/` and register them in `forgeoagent/providers/registry.py`.
+- **Review logs:** OS-agnostic logs are securely stored in `%LOCALAPPDATA%/ForgeOAgent/logs/` on Windows.
 
 ---
 
