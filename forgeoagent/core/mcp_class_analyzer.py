@@ -141,5 +141,5 @@ class PyClassAnalyzer:
         return class_map
     
 if __name__ == "__main__":
-    print(PyClassAnalyzer().get_all_classes("./forgeoagent/mcp/tools"))
+    print(PyClassAnalyzer().get_all_classes("./forgeoagent/tools/implementations"))
     # print(PyClassAnalyzer().get_all_classes("./forgeoagent/clients/"))

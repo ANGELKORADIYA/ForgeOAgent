@@ -13,7 +13,7 @@ from forgeoagent.config import (
     MCP_TOOLS_DIR,
 )
 
-from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.providers.gemini.client import GeminiAPIClient
 from forgeoagent.core.managers.agent_manager import AgentManager
 
 def print_available_executors():

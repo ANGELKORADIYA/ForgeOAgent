@@ -6,7 +6,7 @@ A FastAPI-based preview server that renders HTML content on a local port.
 Designed to be used by AI (Gemini) to display modified/generated HTML.
 
 Usage:
-    from forgeoagent.mcp.tools.web_viewer import WebViewer
+    from forgeoagent.tools.implementations.web_viewer import WebViewer
     
     viewer = WebViewer()
     viewer.render(html_content)  # Set HTML to preview

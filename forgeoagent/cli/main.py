@@ -18,7 +18,7 @@ current_dir = Path(__file__).parent.resolve()
 sys.path.insert(0, str(current_dir))
 
 # Import after path setup
-from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.providers.gemini.client import GeminiAPIClient
 from forgeoagent.controller.executor_controller import (
     print_available_executors,
     save_last_executor,

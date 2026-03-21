@@ -6,7 +6,7 @@ from datetime import datetime
 class AgentManager:
     """Manages saving and loading of agents."""
     
-    def __init__(self, agents_dir: str = f"{os.path.join(os.path.dirname(__file__))}/../../mcp/executor_context_previous_conversation"):
+    def __init__(self, agents_dir: str = f"{os.path.join(os.path.dirname(__file__))}/../../tools/executor_context_previous_conversation"):
         self.agents_dir = agents_dir
         os.makedirs(agents_dir, exist_ok=True)
     

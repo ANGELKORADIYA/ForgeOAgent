@@ -4,7 +4,7 @@ from typing import List
 from dotenv import load_dotenv
 load_dotenv()
 
-from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.providers.gemini.client import GeminiAPIClient
 from forgeoagent.core.managers.security_manager import SecurityManager
 
 

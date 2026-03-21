@@ -4,7 +4,7 @@ import dotenv
 dotenv.load_dotenv()
 
 
-MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "mcp", "tools"))
+MCP_TOOLS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "tools", "implementations"))
 LOG_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
 MAIN_AGENT_LOG_DIR = os.path.join(LOG_DIR, "executor")
 AGENT_LOG_DIR = os.path.join(LOG_DIR, "inquirer")

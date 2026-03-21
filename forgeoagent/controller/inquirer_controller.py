@@ -2,7 +2,7 @@ import os
 import importlib
 from typing import List
 
-from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.providers.gemini.client import GeminiAPIClient
 
 def print_available_inquirers():
     """Print all available *_SYSTEM_INSTRUCTION variables from the current context."""
@@ -10,7 +10,7 @@ def print_available_inquirers():
         if var_name.endswith("_SYSTEM_INSTRUCTION"):
             print(f"{var_name}")
 
-def auto_import_inquirers(package_path="mcp.system_prompts"):
+def auto_import_inquirers(package_path="tools.system_prompts"):
     """Auto import all constants from system_prompts modules"""
     globals_dict = globals()
     

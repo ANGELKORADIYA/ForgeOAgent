@@ -15,15 +15,17 @@ sys.path.insert(0, str(parent_dir))
 
 try:
     # Import functions from main.py
-    from forgeoagent.main import (
+    from forgeoagent.controller.inquirer_controller import (
         inquirer_using_selected_system_instructions,
         print_available_inquirers,
+        auto_import_inquirers
+    )
+    from forgeoagent.controller.executor_controller import (
         print_available_executors,
-        auto_import_inquirers,
-        GeminiAPIClient,
         create_master_executor,
         save_last_executor
     )
+    from forgeoagent.providers.gemini.client import GeminiAPIClient
     from dotenv import load_dotenv
     
     # Load environment variables

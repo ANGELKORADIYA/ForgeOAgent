@@ -10,7 +10,7 @@ import sys
 from forgeoagent.core.managers.pip_install_manager import PIPInstallManager
 from forgeoagent.core.managers.api_key_manager import GlobalAPIKeyManager
 from forgeoagent.core.mcp_class_analyzer import PyClassAnalyzer
-from forgeoagent.shared.helpers import capture_print_output
+from forgeoagent.core.helpers import capture_print_output
 
 from forgeoagent.config import (
     DEFAULT_SYSTEM_INSTRUCTION,
@@ -23,7 +23,7 @@ from forgeoagent.config import (
 
 from google.genai import types
 
-from forgeoagent.providers.gemini import GeminiLogger , GeminiContentManager , GeminiExecutor , GeminiInquirer
+from forgeoagent.clients.gemini import GeminiLogger , GeminiContentManager , GeminiExecutor , GeminiInquirer
 
 class GeminiAPIClient(GeminiLogger,GeminiContentManager,GeminiExecutor,GeminiInquirer):
     def __init__(self, 
@@ -60,7 +60,7 @@ class GeminiAPIClient(GeminiLogger,GeminiContentManager,GeminiExecutor,GeminiInq
 
 
     def _execute_generated_code(self, main_response: Dict[str, Any]) -> None:
-            print("🚀 Starting Code Execution")
+            print("???? Starting Code Execution")
             print("=" * 50)
             
             try:
@@ -80,7 +80,7 @@ class GeminiAPIClient(GeminiLogger,GeminiContentManager,GeminiExecutor,GeminiInq
                 }
                 execution_globals.update(mcp_tools_classes)
                 execution_globals["execution_globals"] = execution_globals
-                print("⚡ Executing generated Python code...")
+                print("??? Executing generated Python code...")
                 
                 exec(python_code, execution_globals)
                 # execution_print_sting = capture_print_output(lambda: exec(python_code, execution_globals))
@@ -88,13 +88,13 @@ class GeminiAPIClient(GeminiLogger,GeminiContentManager,GeminiExecutor,GeminiInq
                 # self._log_interaction("execution_print_sting :"+str(execution_print_sting),None,log_type="execution_print_string")
 
                 print("-" * 30)
-                print("✅ Code execution completed successfully!")
+                print("??? Code execution completed successfully!")
                 
             except Exception as e:
-                error_msg = f"❌ Execution failed: {str(e)}"
+                error_msg = f"??? Execution failed: {str(e)}"
                 print(error_msg)
                 self._log_interaction("Error in Your Code :"+error_msg,None)
-                print(f"📋 Traceback:\n{traceback.format_exc()}")
+                print(f"???? Traceback:\n{traceback.format_exc()}")
 
 
 if __name__ == "__main__":

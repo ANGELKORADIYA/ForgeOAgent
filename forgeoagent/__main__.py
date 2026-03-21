@@ -1,4 +1,4 @@
-from .main import main
+from .core.main import main
 # main()
 
 ## testiong 
@@ -6,11 +6,11 @@ from .main import main
 from forgeoagent.config import config
 print(config.DEFAULT_MODEL)
 
-from forgeoagent.clients import gemini_engine
-from forgeoagent.clients import GeminiAPIClient
+from forgeoagent.providers.gemini import client as gemini_engine
+from forgeoagent.providers.gemini.client import GeminiAPIClient
 print(GeminiAPIClient())
 
-from forgeoagent.clients.gemini import gemini_content_manager
+from forgeoagent.providers.gemini import gemini_content_manager
 print(gemini_content_manager.GeminiContentManager)
 
 from forgeoagent.controller import executor_controller
@@ -24,6 +24,6 @@ print(PyClassAnalyzer().get_all_classes("/home/userpc/29/ForgeOAgent/forgeoagent
 
 ## mcp tools testing
 
-from .mcp.tools import structure_manager
+from forgeoagent.tools.implementations import structure_manager
 memory_manager = structure_manager.StructureManager()
 memory_manager.add_folder_structure("/home/userpc/29/ForgeOAgent/forgeoagent")

@@ -15,7 +15,7 @@ File: services/content_fetcher.py
 import base64
 import requests
 from typing import List, Dict, Optional
-from forgeoagent.clients.gemini_engine import GeminiAPIClient
+from forgeoagent.providers.gemini.client import GeminiAPIClient
 from google.genai import types
 from google import genai
 import json
