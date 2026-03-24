@@ -24,6 +24,7 @@ try:
         create_master_executor,
         save_last_executor
     )
+    from forgeoagent.core.managers import AgentManager
     from dotenv import load_dotenv
     
     # Load environment variables
@@ -310,10 +311,12 @@ class PromptProcessorFrame(wx.Frame):
             wx.MessageBox("No API keys configured. Please check your .env file.", "Error", wx.OK | wx.ICON_ERROR)
             return
             
-        # Prepare the input
+        # Capture all UI state on the main thread
         context_text = self.context_text.GetValue().strip()
         selected_type = self.prompt_choice.GetStringSelection()
         user_sys_inst = self.sys_inst_text.GetValue().strip() or None
+        is_executor = self.mode_executor.GetValue()
+        new_content = self.new_content_cb.GetValue()
         
         # Format final text
         if context_text:
@@ -327,21 +330,25 @@ class PromptProcessorFrame(wx.Frame):
         
         # Run processing in background thread
         thread = threading.Thread(target=self.process_in_background, 
-                                args=(final_text, selected_type, user_sys_inst))
+                                 args=(final_text, selected_type, user_sys_inst, is_executor, new_content))
         thread.daemon = True
         thread.start()
         
-    def process_in_background(self, final_text, selected_type, user_sys_inst):
+    def process_in_background(self, final_text, selected_type, user_sys_inst, is_executor, new_content):
         """Process the prompt in background thread"""
         try:
-            new_content = self.new_content_cb.GetValue()
             result = ""
-            
-            if self.mode_executor.GetValue():
+            if is_executor:
                 # Executor mode - use create_master_executor function
                 try:
-                    # Pass selected_type as reference_agent_path - create_master_executor will resolve it
-                    reference_agent_path = selected_type if selected_type and selected_type != "None" else None
+                    agent_manager = AgentManager()
+                    prompt_text_path = None
+                    
+                    if selected_type and selected_type != "None":
+                        try:
+                            prompt_text_path = agent_manager.get_agent_path(selected_type)
+                        except:
+                            prompt_text_path = None
                     
                     # Capture output from create_master_executor
                     output, _ = self.capture_print_output(
@@ -350,7 +357,7 @@ class PromptProcessorFrame(wx.Frame):
                         final_text,
                         shell_enabled=True,
                         selected_agent={"agent_name": selected_type} if selected_type != "None" else None,
-                        reference_agent_path=reference_agent_path,
+                        reference_agent_path=prompt_text_path,
                         new_content=new_content,
                         user_system_instruction=user_sys_inst
                     )
@@ -376,7 +383,7 @@ class PromptProcessorFrame(wx.Frame):
             
             # Show result on main thread
             if result:
-                wx.CallAfter(self.show_result, result, selected_type)
+                wx.CallAfter(self.show_result, result, selected_type, is_executor)
             else:
                 wx.CallAfter(self.show_error, "No output received from processing")
             
@@ -394,10 +401,10 @@ class PromptProcessorFrame(wx.Frame):
         """Show error message"""
         wx.MessageBox(error_msg, "Error", wx.OK | wx.ICON_ERROR)
         
-    def show_result(self, result, selected_type):
+    def show_result(self, result, selected_type, is_executor):
         """Show processing result"""
         # Create result dialog
-        dlg = ResultDialog(self, result, selected_type,self.mode_executor.GetValue())
+        dlg = ResultDialog(self, result, selected_type, is_executor)
         dlg.ShowModal()
         dlg.Destroy()
 

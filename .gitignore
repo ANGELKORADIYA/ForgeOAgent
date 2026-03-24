@@ -28,3 +28,8 @@ logs/
 *.log
 *.sqlite3
 .vercel
+
+# Build
+dist/
+build/
+*.spec
