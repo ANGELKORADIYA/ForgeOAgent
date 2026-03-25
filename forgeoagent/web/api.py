@@ -382,7 +382,7 @@ def capture_print_output(func, *args, **kwargs):
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     """Serve the main HTML form"""
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html", {"request": request})
 
 
 @app.get("/api/prompt-types")
