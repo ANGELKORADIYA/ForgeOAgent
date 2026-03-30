@@ -1,4 +1,5 @@
-Set WShell = CreateObject("WScript.Shell")
-strPath = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
-pythonCmd = "python """ & strPath & "\..\..\start.py"""
-WShell.Run pythonCmd, 0, False
+Set WshShell = CreateObject("WScript.Shell")
+scriptDir = CreateObject("Scripting.FileSystemObject").GetParentFolderName(WScript.ScriptFullName)
+enhancePath = scriptDir & "\start.bat"
+WshShell.Run chr(34) & enhancePath & chr(34), 0
+Set WshShell = Nothing
